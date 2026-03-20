@@ -10,9 +10,15 @@ import javafx.stage.Stage;
 
 public class SceneSelector extends Application{
 
+	private static Stage activeStage;
+	private static Scene mainMenuScene;
+	private static Scene levelOneScene;
+	
 	@Override
 	public void start(Stage stage) throws Exception {
 		// TODO Auto-generated method stub
+		
+		activeStage = stage;
 		
 		//get launch parameters
 		Parameters params = getParameters();
@@ -24,14 +30,18 @@ public class SceneSelector extends Application{
 	    
 	    
 	    Parent mainMenuRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/MainMenu.fxml"));
-		Scene mainMenuScene = new Scene(mainMenuRoot, width, height);
+		mainMenuScene = new Scene(mainMenuRoot, width, height);
 		
 		Parent levelOneRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/LevelOne.fxml"));
-		Scene levelOne = new Scene(levelOneRoot, width, height);
+		levelOneScene = new Scene(levelOneRoot, width, height);
 		
 		stage.setTitle("Bone Forge Defense");
 		stage.setScene(mainMenuScene);
 		stage.show();
+	}
+	
+	public static void launchLevelOneScene() {
+		activeStage.setScene(levelOneScene);
 	}
 
 	public static void main(String[] args) {
