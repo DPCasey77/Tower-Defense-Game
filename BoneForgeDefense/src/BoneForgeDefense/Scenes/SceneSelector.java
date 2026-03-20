@@ -13,6 +13,7 @@ public class SceneSelector extends Application{
 	private static Stage activeStage;
 	private static Scene mainMenuScene;
 	private static Scene levelOneScene;
+	private static Scene settingsMenuScene;
 	
 	@Override
 	public void start(Stage stage) throws Exception {
@@ -35,9 +36,16 @@ public class SceneSelector extends Application{
 		Parent levelOneRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/LevelOne.fxml"));
 		levelOneScene = new Scene(levelOneRoot, width, height);
 		
+		Parent settingsMenuRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/SettingsMenu.fxml"));
+		settingsMenuScene = new Scene(settingsMenuRoot, width, height);
+		
 		stage.setTitle("Bone Forge Defense");
 		stage.setScene(mainMenuScene);
 		stage.show();
+	}
+	
+	public static void launchSettingsMenuScene() {
+		activeStage.setScene(settingsMenuScene);
 	}
 	
 	public static void launchLevelOneScene() {

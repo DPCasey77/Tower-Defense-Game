@@ -25,6 +25,11 @@ public class MainMenuController {
     	SceneSelector.launchLevelOneScene();
     	System.out.println("New game started!");
     }
+    
+    @FXML
+    void openSettings(MouseEvent event) {
+    	SceneSelector.launchSettingsMenuScene();
+    }
 
 }
 
