@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="settingsController">
+   <children>
+      <BorderPane layoutX="-1.0" prefHeight="400.0" prefWidth="600.0">
+         <left>
+            <Pane prefWidth="80.0" BorderPane.alignment="CENTER" />
+         </left>
+         <right>
+            <Pane prefWidth="80.0" BorderPane.alignment="CENTER" />
+         </right>
+         <bottom>
+            <Pane prefHeight="100.0" BorderPane.alignment="CENTER" />
+         </bottom>
+         <center>
+            <VBox prefHeight="184.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <children>
+                  <Label alignment="CENTER" prefHeight="35.0" prefWidth="457.0" text="Settings" textAlignment="CENTER">
+                     <font>
+                        <Font size="24.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Label>
+                  <HBox>
+                     <children>
+                        <Label alignment="TOP_LEFT" contentDisplay="RIGHT" text="Volume">
+                           <graphic>
+                              <Slider fx:id="volumeSlider" blockIncrement="1.0" majorTickUnit="10.0" minorTickCount="5" nodeOrientation="LEFT_TO_RIGHT" prefHeight="37.0" prefWidth="395.0" showTickLabels="true" showTickMarks="true" value="100.0">
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" />
+                                 </padding>
+                              </Slider>
+                           </graphic>
+                        </Label>
+                     </children>
+                  </HBox>
+                  <HBox prefHeight="100.0" prefWidth="200.0">
+                     <children>
+                        <Label contentDisplay="RIGHT" text="Screen Sizes:" />
+                        <RadioButton fx:id="extraLargeScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="3840x2160">
+                           <padding>
+                              <Insets left="10.0" />
+                           </padding>
+                        </RadioButton>
+                        <RadioButton fx:id="largeScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="2560x1440">
+                           <HBox.margin>
+                              <Insets left="10.0" />
+                           </HBox.margin>
+                        </RadioButton>
+                        <RadioButton fx:id="mediumScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" selected="true" text="1920x1080">
+                           <HBox.margin>
+                              <Insets left="10.0" />
+                           </HBox.margin>
+                        </RadioButton>
+                        <RadioButton fx:id="smallScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="1366x768">
+                           <HBox.margin>
+                              <Insets left="10.0" />
+                           </HBox.margin>
+                        </RadioButton>
+                     </children>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </HBox>
+               </children>
+            </VBox>
+         </center>
+         <top>
+            <Pane prefHeight="100.0" BorderPane.alignment="CENTER" />
+         </top>
+      </BorderPane>
+   </children>
+</Pane>
