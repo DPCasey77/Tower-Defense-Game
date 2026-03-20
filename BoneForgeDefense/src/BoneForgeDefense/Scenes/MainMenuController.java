@@ -30,6 +30,11 @@ public class MainMenuController {
     void openSettings(MouseEvent event) {
     	SceneSelector.launchSettingsMenuScene();
     }
+    
+    @FXML
+    void exitProgram(MouseEvent event) {
+    	System.exit(0);
+    }
 
 }
 
