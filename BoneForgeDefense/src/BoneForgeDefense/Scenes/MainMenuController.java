@@ -24,6 +24,8 @@ public class MainMenuController {
     void startNewGame(MouseEvent event) {
     	SceneSelector.launchLevelOneScene();
     	System.out.println("New game started!");
+    	LevelOneController levelOneController = new LevelOneController();
+    	levelOneController.startGameLoop();
     }
     
     @FXML
