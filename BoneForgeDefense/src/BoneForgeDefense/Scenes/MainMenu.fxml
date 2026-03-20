@@ -36,7 +36,7 @@
                   </Label>
                   <Button alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="New Game" />
                   <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Continue Game" />
-                  <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Settings" />
+                  <Button fx:id="settingsButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Settings" />
                   <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Exit" />
                </children>
                <padding>
