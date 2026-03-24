@@ -15,6 +15,8 @@ public class SceneSelector extends Application{
 	private static Scene levelOneScene;
 	private static Scene settingsMenuScene;
 	
+	private static LevelOneController levelOneController;
+	
 	@Override
 	public void start(Stage stage) throws Exception {
 		// TODO Auto-generated method stub
@@ -26,15 +28,18 @@ public class SceneSelector extends Application{
 		Map<String, String> namedParams = params.getNamed();
 		
 		
-		double width = Double.parseDouble(namedParams.getOrDefault("width", "800"));
-	    double height = Double.parseDouble(namedParams.getOrDefault("height", "600"));
+		double width = Double.parseDouble(namedParams.getOrDefault("width", "1600"));
+	    double height = Double.parseDouble(namedParams.getOrDefault("height", "1000"));
 	    
 	    
 	    Parent mainMenuRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/MainMenu.fxml"));
 		mainMenuScene = new Scene(mainMenuRoot, width, height);
 		
-		Parent levelOneRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/LevelOne.fxml"));
-		levelOneScene = new Scene(levelOneRoot, width, height);
+		FXMLLoader levelOneLoader = new FXMLLoader(getClass().getResource("/BoneForgeDefense/Scenes/LevelOne.fxml"));
+		Parent levelOneRoot = levelOneLoader.load();
+		levelOneController = levelOneLoader.getController();
+		levelOneScene = new Scene(levelOneRoot, width, height);		
+		
 		
 		Parent settingsMenuRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/SettingsMenu.fxml"));
 		settingsMenuScene = new Scene(settingsMenuRoot, width, height);
@@ -50,6 +55,10 @@ public class SceneSelector extends Application{
 	
 	public static void launchLevelOneScene() {
 		activeStage.setScene(levelOneScene);
+	}
+	
+	public static LevelOneController getLevelOneController() {
+	    return levelOneController;
 	}
 
 	public static void main(String[] args) {

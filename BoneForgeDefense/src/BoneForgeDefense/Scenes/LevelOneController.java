@@ -1,5 +1,6 @@
 package BoneForgeDefense.Scenes;
-
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.animation.AnimationTimer;
 
 
@@ -7,6 +8,16 @@ public class LevelOneController {
 	
 	private long lastNanoSecond = 0;
 	private Boolean gameOver = false;
+	
+	private double bones;
+	private double money;
+	
+	@FXML
+    private Label bonesTextbox;
+
+    @FXML
+    private Label moneyTextbox;
+       
 	
 	public void startGameLoop() {
         new AnimationTimer() {
@@ -33,10 +44,34 @@ public class LevelOneController {
         }.start();
     }
 	
-	private int testCounter = 0;
+	public void startNewGame(double bones, double money) { 		
+		this.bones = bones;
+		this.money = money;
+		bonesTextbox.setText(String.format("%.0f", bones));
+		moneyTextbox.setText(String.format("%.0f", money));
+		startGameLoop();
+	}
+	
+	//private int testCounter = 0;
 	private void update(double delta) {
-		testCounter += 1;
-		System.out.println(testCounter);
+		//testCounter += 1;
+		//System.out.println(testCounter);
+	}
+	
+	public double getBones() {
+		return bones;
+	}
+	
+	public void setBones(double bones) {
+		this.bones = bones;
+	}
+
+	public double getMoney() {
+		return money;
+	}
+
+	public void setMoney(double money) {
+		this.money = money;
 	}
 
 }
