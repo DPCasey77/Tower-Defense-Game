@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class GameSettings {
 	
-	//add new settings variables here "NameAsString", Default Value   ***KEEPS DATA TYPES***
+	//add new settings variables here "NameAsString", Default Value
 	private HashMap<String, Object> settingsMap = new HashMap<>(Map.of(
 		"CONFIG_FILE", "config.dat",
 		"screenHeight", 1080,

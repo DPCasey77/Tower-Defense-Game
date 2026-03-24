@@ -9,9 +9,25 @@ public class BoneForgeDefense {
 		// TODO create the whole ass game
 		System.out.println("Please work!!!");
 		System.out.println("Lets hope this push works!");
-		//TODO Create settings file
+		
+		int rows = 7;
+		int cols = 10;
+		int[][] map = {
+				{2,0,0,0,0,0,0,0,0,0},
+				{1,1,1,1,1,1,0,1,0,0},
+				{0,0,0,0,0,0,0,0,0,0},
+				{0,0,0,1,1,1,1,1,1,1},
+				{0,0,0,1,1,1,1,1,1,1},
+				{0,0,0,1,1,1,1,1,1,1},
+				{0,0,0,0,0,0,0,0,0,3}};
+		
+		PathFinder path = new PathFinder(cols,rows,map);
+		path.search();
+		path.drawMapPath();
+		
 		
 		StartUp(args);
+		ShutDown();
 		
 	}
 
@@ -25,6 +41,11 @@ public class BoneForgeDefense {
 		int width = (int) gameSettings.getSetting("screenWidth");
 		Application.launch(SceneSelector.class, "--height=" + height, "--width=" + width);
 		
+	}
+	
+	//Shutdown Sequence
+	private static void ShutDown() {
+		//add shutdown stuff like saving
 	}
 
 }
