@@ -86,6 +86,7 @@ public class BoneForgeDefense {
 		int width = (int) gameSettings.getSetting("screenWidth");
 		Application.launch(SceneSelector.class, "--height=" + height, "--width=" + width);
 		
+		
 	}
 	
 	//Shutdown Sequence
