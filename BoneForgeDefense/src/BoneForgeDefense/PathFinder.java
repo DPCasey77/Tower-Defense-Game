@@ -96,8 +96,10 @@ public class PathFinder {
 		int step = 0;
 		int bestNodeIndex = 0;
 		double bestNodeCost = 100000;
+		currentNode.tCost(startNode,endNode);
+		int maxSteps = rows*cols;
 		
-		while(goalReached == false && step < 200) {
+		while(goalReached == false && step < maxSteps) {
 			step++;
 			
 			//debug
@@ -138,24 +140,24 @@ public class PathFinder {
 			
 			
 			for (int i=0; i < openList.size();i++) {
-				openList.get(i).fCost(startNode,endNode);
+				openList.get(i).tCost(startNode,endNode);
 				
 				//debug code
 				System.out.println(openList.get(i).getX() + " " + openList.get(i).getY());
-				System.out.println("openList "+ i + "\n\tfcost:" + openList.get(i).fCost + "\n\tgcost:" + openList.get(i).gCost + "\n\thcost:" + openList.get(i).hCost);
+				System.out.println("openList "+ i + "\n\ttcost:" + openList.get(i).tCost + "\n\tscost:" + openList.get(i).sCost + "\n\tecost:" + openList.get(i).eCost);
 				
-				if(openList.get(i).fCost < bestNodeCost) {
+				if(openList.get(i).tCost < bestNodeCost) {
 					bestNodeIndex=i;
-					bestNodeCost = openList.get(i).fCost;
+					bestNodeCost = openList.get(i).tCost;
 				}
 			
-				else if(openList.get(i).fCost == bestNodeCost) {
+				else if(openList.get(i).tCost == bestNodeCost) {
 					if(bestNodeIndex > openList.size() - 1) {
 						bestNodeIndex = 0;
 					}
-					if(openList.get(i).hCost < openList.get(bestNodeIndex).hCost){
+					if(openList.get(i).eCost < openList.get(bestNodeIndex).eCost){
 						bestNodeIndex=i;
-						bestNodeCost = openList.get(i).fCost;
+						bestNodeCost = openList.get(i).tCost;
 					}
 				}
 			}

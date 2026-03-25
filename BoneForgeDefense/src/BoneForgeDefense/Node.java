@@ -4,9 +4,9 @@ public class Node {
 	private int X;
 	private int Y;
 
-	public double fCost = 1000000.0;
-	public double gCost = 1000000.0;
-	public double hCost = 1000000.0;
+	public double tCost = 1000000.0;
+	public double sCost = 1000000.0;
+	public double eCost = 1000000.0;
 	private boolean start = false;
 	private boolean end  = false;
 	private boolean wall  = false;
@@ -45,10 +45,14 @@ public class Node {
 	public boolean getIsPath() {return isPath;}
 	
 	
-	public void fCost(Node startNode, Node endNode) {
-		hCost = Math.abs(this.X - endNode.X) + Math.abs(this.Y - endNode.Y);
-		gCost = Math.abs(this.X - startNode.X) + Math.abs(this.Y - startNode.Y);
-		this.fCost = gCost + hCost;
+	public void tCost(Node startNode, Node endNode) {
+		eCost = Math.abs(this.X - endNode.X) + Math.abs(this.Y - endNode.Y);
+		if(this.start==true) 
+			sCost=0;
+		else 
+			sCost=this.parent.sCost+1;
+		
+		this.tCost = sCost + eCost;
 	}
 	
 }
