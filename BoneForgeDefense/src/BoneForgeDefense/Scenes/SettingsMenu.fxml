@@ -57,17 +57,30 @@
                            <toggleGroup>
                               <ToggleGroup fx:id="screenSizeToggleGroup" />
                            </toggleGroup>
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
                         </RadioButton>
-                        <RadioButton fx:id="largeScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="2560x1440" toggleGroup="$screenSizeToggleGroup" />
+                        <RadioButton fx:id="largeScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="2560x1440" toggleGroup="$screenSizeToggleGroup">
+                           <padding>
+                              <Insets left="10.0" />
+                           </padding>
+                        </RadioButton>
                         <RadioButton fx:id="mediumScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" selected="true" text="1920x1080" toggleGroup="$screenSizeToggleGroup">
                            <HBox.margin>
-                              <Insets left="10.0" />
+                              <Insets />
                            </HBox.margin>
+                           <padding>
+                              <Insets left="10.0" />
+                           </padding>
                         </RadioButton>
                         <RadioButton fx:id="smallScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="1366x768" toggleGroup="$screenSizeToggleGroup">
                            <HBox.margin>
-                              <Insets left="10.0" />
+                              <Insets />
                            </HBox.margin>
+                           <padding>
+                              <Insets left="10.0" />
+                           </padding>
                         </RadioButton>
                      </children>
                      <opaqueInsets>
