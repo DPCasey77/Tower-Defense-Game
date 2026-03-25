@@ -4,12 +4,20 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Button;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
 import javafx.stage.Stage;
+import javafx.scene.control.ToggleGroup;
 
 public class SettingsMenuController {
+	
+	@FXML
+    private Button backButton;
 
     @FXML
     private RadioButton extraLargeScreenButton;
@@ -19,12 +27,27 @@ public class SettingsMenuController {
 
     @FXML
     private RadioButton mediumScreenButton;
+    
+    @FXML
+    private ToggleGroup screenSizeToggleGroup;
 
     @FXML
     private RadioButton smallScreenButton;
 
     @FXML
     private Slider volumeSlider;
+    
+    @FXML
+    void handleBackButton(ActionEvent event) {
+    	try {
+    		Parent root = FXMLLoader.load(getClass().getResource("MainMenu.fxml"));
+    		Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+    		stage.setScene(new Scene(root));
+    		stage.show();
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    }
 
     @FXML
     private void handleScreenSizeChange(ActionEvent event) {
