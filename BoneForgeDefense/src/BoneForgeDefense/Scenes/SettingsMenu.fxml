@@ -62,7 +62,7 @@
                               <Insets />
                            </HBox.margin>
                         </RadioButton>
-                        <RadioButton fx:id="largeScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="1600X1000" toggleGroup="$screenSizeToggleGroup">
+                        <RadioButton fx:id="largeScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="1600x1000" toggleGroup="$screenSizeToggleGroup">
                            <padding>
                               <Insets left="10.0" />
                            </padding>
@@ -75,7 +75,7 @@
                               <Insets left="10.0" />
                            </padding>
                         </RadioButton>
-                        <RadioButton fx:id="smallScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="800X600" toggleGroup="$screenSizeToggleGroup">
+                        <RadioButton fx:id="smallScreenButton" mnemonicParsing="false" onAction="#handleScreenSizeChange" text="800x600" toggleGroup="$screenSizeToggleGroup">
                            <HBox.margin>
                               <Insets />
                            </HBox.margin>
