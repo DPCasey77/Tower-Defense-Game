@@ -1,6 +1,7 @@
 package BoneForgeDefense;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class PathFinder {
 	private int cols;
@@ -203,6 +204,27 @@ public class PathFinder {
 			System.out.println("\t not opened is open");
 		}
 	}
+	public Node[][] getNodes() {
+		return node;
+	}
+
+	// Returns the path in start-to-end order by following parent pointers from the end node
+	public List<Node> getOrderedPath() {
+		List<Node> reversed = new ArrayList<>();
+		Node current = endNode;
+		while (current != startNode) {
+			reversed.add(current);
+			current = current.getParent();
+		}
+		reversed.add(startNode);
+
+		List<Node> ordered = new ArrayList<>();
+		for (int i = reversed.size() - 1; i >= 0; i--) {
+			ordered.add(reversed.get(i));
+		}
+		return ordered;
+	}
+
 	private void setStartNode(int x, int y) {
 		node[x][y].setIsStart();
 		startNode = node[x][y];
