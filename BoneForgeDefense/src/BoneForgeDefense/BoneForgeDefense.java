@@ -66,10 +66,10 @@ public class BoneForgeDefense {
 		};
 
 		
-		PathFinder path = new PathFinder(cols,rows,map);
+		/*PathFinder path = new PathFinder(cols,rows,map);
 		path.search();
 		path.drawMapPath();
-		
+		*/
 		
 		StartUp(args);
 		ShutDown();

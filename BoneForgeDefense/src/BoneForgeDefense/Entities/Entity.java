@@ -1,4 +1,4 @@
-package BoneForgeDefense;
+package BoneForgeDefense.Entities;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -35,5 +35,7 @@ public abstract class Entity {
     public ImageView getSprite() { 
     	return sprite;
     }
+    
+    
 
 }

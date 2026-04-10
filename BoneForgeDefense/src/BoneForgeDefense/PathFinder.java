@@ -104,8 +104,8 @@ public class PathFinder {
 			step++;
 			
 			//debug
-			System.out.println("step: " + step);
-			System.out.println(currentNode.getX() + " " + currentNode.getY());
+			//System.out.println("step: " + step);
+			//System.out.println(currentNode.getX() + " " + currentNode.getY());
 			
 			int col = currentNode.getY();
 			int row = currentNode.getX();
@@ -116,25 +116,25 @@ public class PathFinder {
 			
 			if (row > 0 ) {
 				//open node above if not on top row
-				System.out.println("opened above");
+				//System.out.println("opened above");
 				openNode(node[row-1][col]);
 				
 			}
 			if (row < rows-1) {
 				//open node below if not on bottom row
-				System.out.println("opened below");
+				//System.out.println("opened below");
 				openNode(node[row+1][col]);
 				
 			}
 			if (col < cols-1) {
 				//open right node if not on right row
-				System.out.println("opened right");
+				//System.out.println("opened right");
 				openNode(node[row][col+1]);
 				
 			}
 			if (col > 0) {
 				//open left node if not on left row
-				System.out.println("opened left");
+				//System.out.println("opened left");
 				openNode(node[row][col-1]);
 				
 			}
@@ -144,8 +144,8 @@ public class PathFinder {
 				openList.get(i).tCost(startNode,endNode);
 				
 				//debug code
-				System.out.println(openList.get(i).getX() + " " + openList.get(i).getY());
-				System.out.println("openList "+ i + "\n\ttcost:" + openList.get(i).tCost + "\n\tscost:" + openList.get(i).sCost + "\n\tecost:" + openList.get(i).eCost);
+				//System.out.println(openList.get(i).getX() + " " + openList.get(i).getY());
+				//System.out.println("openList "+ i + "\n\ttcost:" + openList.get(i).tCost + "\n\tscost:" + openList.get(i).sCost + "\n\tecost:" + openList.get(i).eCost);
 				
 				if(openList.get(i).tCost < bestNodeCost) {
 					bestNodeIndex=i;
@@ -165,8 +165,8 @@ public class PathFinder {
 			
 			//debug code
 			//System.out.println(openList.get(bestNodeIndex).getX() + " " + openList.get(bestNodeIndex).getY());
-			System.out.println("Open list size: " + openList.size());
-			System.out.println("Best Index: " + bestNodeIndex);
+			//System.out.println("Open list size: " + openList.size());
+			//System.out.println("Best Index: " + bestNodeIndex);
 			
 			currentNode = openList.get(bestNodeIndex);
 			if(currentNode == endNode) {
@@ -192,9 +192,9 @@ public class PathFinder {
 			node.setParent(currentNode);
 			openList.add(node);
 			
-			System.out.println("\t opened");
+			//System.out.println("\t opened");
 		}
-		else if(node.getWall()){
+		/*else if(node.getWall()){
 			System.out.println("\t not opened is wall");
 		}
 		else if(node.getChecked()){
@@ -202,7 +202,7 @@ public class PathFinder {
 		}
 		else if(node.getOpen()){
 			System.out.println("\t not opened is open");
-		}
+		}*/
 	}
 	public Node[][] getNodes() {
 		return node;
