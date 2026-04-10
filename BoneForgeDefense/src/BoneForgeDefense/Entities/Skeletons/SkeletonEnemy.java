@@ -1,5 +1,6 @@
 package BoneForgeDefense.Entities.Skeletons;
 
+import BoneForgeDefense.Entities.Skeleton;
 import javafx.scene.image.ImageView;
 
 	public class SkeletonEnemy extends Skeleton {

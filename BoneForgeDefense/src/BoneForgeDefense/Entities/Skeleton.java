@@ -1,6 +1,4 @@
-package BoneForgeDefense.Entities.Skeletons;
-
-import BoneForgeDefense.Entities.Entity;
+package BoneForgeDefense.Entities;
 
 public abstract class Skeleton extends Entity{
 	private double health;

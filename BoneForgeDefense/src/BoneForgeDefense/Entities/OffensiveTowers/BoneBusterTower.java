@@ -3,7 +3,7 @@ package BoneForgeDefense.Entities.OffensiveTowers;
 import java.util.Comparator;
 import java.util.List;
 
-import BoneForgeDefense.Entities.Skeletons.Skeleton;
+import BoneForgeDefense.Entities.Skeleton;
 
 
 public class BoneBusterTower extends OffensiveTower {

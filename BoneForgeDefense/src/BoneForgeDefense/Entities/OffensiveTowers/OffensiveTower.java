@@ -2,8 +2,8 @@ package BoneForgeDefense.Entities.OffensiveTowers;
 
 import java.util.List;
 
+import BoneForgeDefense.Entities.Skeleton;
 import BoneForgeDefense.Entities.Tower;
-import BoneForgeDefense.Entities.Skeletons.Skeleton;
 
 
 public abstract class OffensiveTower extends Tower{
