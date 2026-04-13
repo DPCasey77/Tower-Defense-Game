@@ -1,8 +1,5 @@
 package BoneForgeDefense.Entities.OffensiveTowers;
 
-import java.util.List;
-
-import BoneForgeDefense.Entities.Skeleton;
 import BoneForgeDefense.Entities.Tower;
 
 
@@ -21,6 +18,6 @@ public abstract class OffensiveTower extends Tower{
 	}
 	
 	public abstract void shoot();
-	public abstract Skeleton getTarget(List<Skeleton> enemyList);
+	public abstract int getTarget();
 
 }
