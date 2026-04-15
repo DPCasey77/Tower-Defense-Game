@@ -17,9 +17,10 @@ public class BoneBusterTower extends OffensiveTower {
     public BoneBusterTower(double x, double y) {
         super(x, y, "/BoneForgeDefense/Sprites/boneBusterTower.png",
               "Bone Buster Tower",
-              75,    // cost
+              75,    // range
               15.0,  // damage
               1.0);  // fire rate (shots per second)
+        this.cost = 100;
         priority = AttackPriority.FIRST;
     }
 

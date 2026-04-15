@@ -44,6 +44,12 @@
                </children>
             </GridPane>
          </left>
+         <right>
+            <!-- Shows the selected tower name and cancel instructions while in placement mode; empty otherwise -->
+            <Label fx:id="placementStatusLabel" wrapText="true" prefWidth="170.0" alignment="CENTER"
+                   style="-fx-text-fill: #CC7700; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 8 0 8;"
+                   BorderPane.alignment="CENTER" />
+         </right>
          <center>
             <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
               <tabs>

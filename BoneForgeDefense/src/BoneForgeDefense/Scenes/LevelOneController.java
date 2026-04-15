@@ -3,8 +3,10 @@ package BoneForgeDefense.Scenes;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -17,6 +19,7 @@ import javafx.animation.AnimationTimer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 
 import BoneForgeDefense.Node;
 import BoneForgeDefense.PathFinder;
@@ -30,32 +33,43 @@ import BoneForgeDefense.Entities.SupportTowers.SlowTower;
 
 public class LevelOneController {
 
-	// --- Game state ---
-	private long lastNanoSecond = 0;
-	private Boolean gameOver = false;
+    // --- Game state ---
+    private long lastNanoSecond = 0;
+    private Boolean gameOver = false;
 
-	private double bones;
-	private double money;
+    private double bones;
+    private double money;
 
-	// --- Enemy spawning ---
-	// Seconds between each skeleton spawn (chosen randomly within this range)
-	private static final double SPAWN_INTERVAL_MIN = 3.0;
-	private static final double SPAWN_INTERVAL_MAX = 8.0;
+    // --- Enemy spawning ---
+    // Seconds between each skeleton spawn (chosen randomly within this range)
+    private static final double SPAWN_INTERVAL_MIN = 3.0;
+    private static final double SPAWN_INTERVAL_MAX = 8.0;
 
-	// --- Map / grid ---
-	private List<Node> path = new ArrayList<>();   // ordered list of nodes from start to end
-	private Pane[][] gridCells = new Pane[MAP_ROWS][MAP_COLS]; // visual cell references
-	private GridPane gameGrid;
+    // --- Map / grid ---
+    private List<Node> path = new ArrayList<>();   // ordered list of nodes from start to end
+    private Node[][] mapNodes;                     // full grid of node data (used for cell styles and hover highlights)
+    private Pane[][] gridCells = new Pane[MAP_ROWS][MAP_COLS]; // references to each visual grid cell
+    private GridPane gameGrid;
 
-	// --- Skeleton tracking ---
-	private final List<SkeletonEnemy> activeSkeletons = new ArrayList<>();
-	private double spawnAccumulator = 0;  // time elapsed since the last spawn
-	private double nextSpawnTime = 0;     // seconds until the next spawn (re-randomized after each spawn)
-	private final Random random = new Random();
+    // --- Skeleton tracking ---
+    private final List<SkeletonEnemy> activeSkeletons = new ArrayList<>();
+    private double spawnAccumulator = 0;  // time elapsed since the last spawn
+    private double nextSpawnTime = 0;     // seconds until the next spawn (re-randomized after each spawn)
+    private final Random random = new Random();
 
-	// --- FXML bindings ---
-	@FXML private Label bonesTextbox;
+    // --- Tower placement ---
+    // When the player clicks a tower card, pendingTower holds the selected tower
+    // until they either click a valid cell to place it, or press Esc to cancel.
+    private Tower pendingTower = null;
+    // A factory that creates a fresh instance of the selected tower type on placement
+    private Supplier<Tower> pendingTowerSupplier = null;
+    // Tracks which tower occupies each grid cell (null = empty)
+    private Tower[][] placedTowers = new Tower[MAP_ROWS][MAP_COLS];
+
+    // --- FXML bindings ---
+    @FXML private Label bonesTextbox;
     @FXML private Label moneyTextbox;
+    @FXML private Label placementStatusLabel; // shows instructions while in tower placement mode
 
     @FXML private StackPane gameMapPane;
 
@@ -63,8 +77,8 @@ public class LevelOneController {
     @FXML private HBox defensiveTowerContainer;
     @FXML private HBox supportTowerContainer;
 
-	// --- Map definition ---
-	// 0 = open (tower-placeable), 1 = wall, 2 = start, 3 = end
+    // --- Map definition ---
+    // 0 = open (tower-placeable), 1 = wall (tower-placeable), 2 = start, 3 = end
     private static final int MAP_ROWS = 50;
     private static final int MAP_COLS = 50;
     private static final int[][] MAP = {
@@ -120,16 +134,16 @@ public class LevelOneController {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3}
     };
 
-	// Starts the JavaFX AnimationTimer, which calls update() every frame
-	public void startGameLoop() {
+    // Starts the JavaFX AnimationTimer, which calls update() every frame
+    public void startGameLoop() {
         new AnimationTimer() {
             @Override
             public void handle(long now) {
 
-            	// Skip the first frame so delta is not calculated from time 0
+                // Skip the first frame so delta is not calculated from time 0
                 if (lastNanoSecond == 0) {
-                		lastNanoSecond = now;
-                		return;
+                    lastNanoSecond = now;
+                    return;
                 }
 
                 // Convert nanoseconds to seconds elapsed since the last frame
@@ -145,69 +159,135 @@ public class LevelOneController {
         }.start();
     }
 
-	// Builds one shop card per tower and adds it to the correct tab container
-	private void loadTowerCards() {
-		List<Tower> offensiveTowers = List.of(new BoneBusterTower(0, 0));
-	    List<Tower> defensiveTowers = List.of(new ShieldTower(0, 0));
-	    List<Tower> supportTowers   = List.of(new SlowTower(0, 0));
+    // Builds one shop card per tower and adds it to the correct tab container.
+    // Each tower is paired with a factory (Supplier) so a fresh instance can be
+    // created when the player actually places it on the grid.
+    private void loadTowerCards() {
+        offensiveTowerContainer.getChildren().add(
+            createTowerCard(new BoneBusterTower(0, 0), () -> new BoneBusterTower(0, 0)));
+        defensiveTowerContainer.getChildren().add(
+            createTowerCard(new ShieldTower(0, 0), () -> new ShieldTower(0, 0)));
+        supportTowerContainer.getChildren().add(
+            createTowerCard(new SlowTower(0, 0), () -> new SlowTower(0, 0)));
+    }
 
-	    for (Tower t : offensiveTowers) offensiveTowerContainer.getChildren().add(createTowerCard(t));
-	    for (Tower t : defensiveTowers) defensiveTowerContainer.getChildren().add(createTowerCard(t));
-	    for (Tower t : supportTowers)   supportTowerContainer.getChildren().add(createTowerCard(t));
-	}
+    // Tower card display constants
+    private static final double CARD_WIDTH  = 100;
+    private static final double CARD_HEIGHT = 150;
+    private static final double SPRITE_WIDTH  = 64;
+    private static final double SPRITE_HEIGHT = 64;
 
-	// Tower card display constants
-	private static final double CARD_WIDTH = 100;
-	private static final double CARD_HEIGHT = 150;
-	private static final double SPRITE_WIDTH = 64;
-	private static final double SPRITE_HEIGHT = 64;
+    // Creates a VBox card showing the tower's sprite, name, and cost.
+    // Clicking the card enters placement mode for that tower type.
+    // The 'factory' parameter is a function that creates a brand-new tower
+    // instance when the player confirms placement on the grid.
+    private VBox createTowerCard(Tower tower, Supplier<Tower> factory) {
+        ImageView sprite = new ImageView(tower.getSprite().getImage());
+        sprite.setFitWidth(SPRITE_WIDTH);
+        sprite.setFitHeight(SPRITE_HEIGHT);
 
-	// Creates a VBox card for a given tower containing its sprite, name, and cost
-	private VBox createTowerCard(Tower tower) {
-	    ImageView sprite = new ImageView(tower.getSprite().getImage());
-	    sprite.setFitWidth(SPRITE_WIDTH);
-	    sprite.setFitHeight(SPRITE_HEIGHT);
+        Label name = new Label(tower.getName());
+        Label cost = new Label("Cost: " + tower.getCost());
 
-	    Label name = new Label(tower.getName());
-	    Label cost = new Label("Cost: " + tower.getCost());
+        VBox towerCard = new VBox(5, sprite, name, cost);
+        towerCard.setAlignment(javafx.geometry.Pos.CENTER);
+        towerCard.setPrefWidth(CARD_WIDTH);
+        towerCard.setPrefHeight(CARD_HEIGHT);
+        towerCard.setMinWidth(CARD_WIDTH);
+        towerCard.setMaxWidth(CARD_WIDTH);
 
-	    VBox towerCard = new VBox(5, sprite, name, cost);
-	    towerCard.setAlignment(javafx.geometry.Pos.CENTER);
-	    towerCard.setPrefWidth(CARD_WIDTH);
-	    towerCard.setPrefHeight(CARD_HEIGHT);
-	    towerCard.setMinWidth(CARD_WIDTH);
-	    towerCard.setMaxWidth(CARD_WIDTH);
+        // Clicking the card begins the placement process instead of immediately buying
+        towerCard.setOnMouseClicked(e -> startPlacementMode(tower, factory));
 
-	    // Clicking the card attempts to purchase the tower
-	    towerCard.setOnMouseClicked(e -> buyTower(tower));
+        return towerCard;
+    }
 
-	    return towerCard;
-	}
+    // Enters tower placement mode for the given tower type.
+    // The player must then click a valid grid cell to place it, or press Esc to cancel.
+    // Money is NOT deducted here — only when the tower is actually placed.
+    private void startPlacementMode(Tower tower, Supplier<Tower> factory) {
+        if (money < tower.getCost()) {
+            placementStatusLabel.setText("Not enough money for " + tower.getName() + "!");
+            return;
+        }
+        pendingTower = tower;
+        pendingTowerSupplier = factory;
+        placementStatusLabel.setText(
+            "Placing: " + tower.getName() + " (cost: " + tower.getCost() + ")"
+            + "  |  Esc to cancel");
+        // Change the cursor to a crosshair to signal placement mode is active
+        gameMapPane.setCursor(Cursor.CROSSHAIR);
+    }
 
-	// Deducts the tower's cost if the player has enough money
-	private void buyTower(Tower tower) {
-		if (money >= tower.getCost()) {
-	        money -= tower.getCost();
-	        moneyTextbox.setText(String.format("%.0f", money));
-	        System.out.println("You bought the " + tower.getName() + "!");
-			} else {
-				System.out.println("You can't afford the " + tower.getName() + "!");
-			}
-	}
+    // Exits placement mode without placing a tower.
+    // Called when the player presses Esc, or if placement completes or fails.
+    private void cancelPlacementMode() {
+        pendingTower = null;
+        pendingTowerSupplier = null;
+        placementStatusLabel.setText("");
+        gameMapPane.setCursor(Cursor.DEFAULT);
+    }
 
-	// Returns the CSS background color for a cell based on its node type
-	private String getCellStyle(Node node) {
+    // Called when a grid cell is clicked.
+    // If a tower is pending, validates the cell and places the tower there.
+    private void onCellClicked(int row, int col) {
+        // Ignore clicks when not in placement mode
+        if (pendingTower == null) return;
+
+        // Only cells marked 0 (open) or 1 (wall) accept towers;
+        // start (2) and end (3) cells are off-limits
+        int cellType = MAP[row][col];
+        if (cellType != 0 && cellType != 1) return;
+
+        // Block stacking a second tower on the same cell
+        if (placedTowers[row][col] != null) return;
+
+        // Re-check affordability in case money changed since placement mode started
+        if (money < pendingTower.getCost()) {
+            placementStatusLabel.setText("Not enough money!");
+            cancelPlacementMode();
+            return;
+        }
+
+        placeTowerAt(row, col);
+    }
+
+    // Creates a fresh tower instance, renders its sprite in the target cell,
+    // and deducts the cost — completing the placement transaction.
+    private void placeTowerAt(int row, int col) {
+        // Instantiate a real tower (not the display prototype from the shop card)
+        Tower newTower = pendingTowerSupplier.get();
+        placedTowers[row][col] = newTower;
+
+        // Bind the tower sprite size to the cell so it scales with window resizes
+        Pane targetCell = gridCells[row][col];
+        ImageView towerSprite = newTower.getSprite();
+        towerSprite.setPreserveRatio(false);
+        towerSprite.fitWidthProperty().bind(targetCell.widthProperty());
+        towerSprite.fitHeightProperty().bind(targetCell.heightProperty());
+        targetCell.getChildren().add(towerSprite);
+
+        // Deduct money only now that the tower is placed
+        money -= pendingTower.getCost();
+        moneyTextbox.setText(String.format("%.0f", money));
+
+        cancelPlacementMode();
+    }
+
+    // Returns the CSS background color for a cell based on its node type
+    private String getCellStyle(Node node) {
         if (node.getStart()) return "-fx-background-color: #2EA832;";
         if (node.getEnd())   return "-fx-background-color: #C43030;";
         if (node.getWall())  return "-fx-background-color: #555555;";
         return "-fx-background-color: #6B8C52;";
     }
 
-	// Runs PathFinder on the map, then builds and populates the visual GridPane
-	private void buildGameGrid() {
+    // Runs PathFinder on the map, then builds and populates the visual GridPane.
+    // Also wires up per-cell click and hover handlers for tower placement.
+    private void buildGameGrid() {
         PathFinder pathFinder = new PathFinder(MAP_COLS, MAP_ROWS, MAP);
         pathFinder.search();
-        Node[][] nodes = pathFinder.getNodes();
+        mapNodes = pathFinder.getNodes();
         path = pathFinder.getOrderedPath();
 
         // Constrain the grid to a square (min of pane width and height) so cells are always square
@@ -229,15 +309,35 @@ public class LevelOneController {
             grid.getRowConstraints().add(rc);
         }
 
-        // Create a colored Pane for each cell and store a reference for later use
+        // Create a colored Pane for each cell, wire placement handlers, and store a reference
         for (int row = 0; row < MAP_ROWS; row++) {
             for (int col = 0; col < MAP_COLS; col++) {
                 Pane cell = new Pane();
                 cell.setMaxWidth(Double.MAX_VALUE);
                 cell.setMaxHeight(Double.MAX_VALUE);
-                cell.setStyle(getCellStyle(nodes[row][col]));
+                cell.setStyle(getCellStyle(mapNodes[row][col]));
                 gridCells[row][col] = cell;
                 grid.add(cell, col, row);
+
+                // Capture row/col in final variables for use inside the lambda closures
+                final int r = row, c = col;
+
+                // While in placement mode, highlight the cell green (valid) or red (invalid) on hover
+                cell.setOnMouseEntered(e -> {
+                    if (pendingTower != null) {
+                        boolean isValidSpot = (MAP[r][c] == 0 || MAP[r][c] == 1)
+                                              && placedTowers[r][c] == null;
+                        cell.setStyle(isValidSpot
+                            ? "-fx-background-color: #90EE90;"   // light green = can place here
+                            : "-fx-background-color: #FF6B6B;"); // light red   = cannot place here
+                    }
+                });
+
+                // Always restore the natural cell color when the mouse leaves
+                cell.setOnMouseExited(e -> cell.setStyle(getCellStyle(mapNodes[r][c])));
+
+                // Attempt to place the pending tower when the player clicks this cell
+                cell.setOnMouseClicked(e -> onCellClicked(r, c));
             }
         }
 
@@ -248,9 +348,22 @@ public class LevelOneController {
             activeSkeletons.forEach(this::positionSkeleton));
         gameMapPane.heightProperty().addListener((obs, old, newVal) ->
             activeSkeletons.forEach(this::positionSkeleton));
+
+        // Register the Escape key to cancel placement mode.
+        // We wait until the scene is attached because the scene is not yet
+        // available at the time buildGameGrid() runs.
+        gameMapPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.setOnKeyPressed(e -> {
+                    if (e.getCode() == KeyCode.ESCAPE) {
+                        cancelPlacementMode();
+                    }
+                });
+            }
+        });
     }
 
-	// Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
+    // Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
     private void spawnSkeleton() {
         SkeletonEnemy skeleton = new SkeletonEnemy(0, 0, "/BoneForgeDefense/Sprites/skeleton.png");
 
@@ -310,67 +423,67 @@ public class LevelOneController {
         skeleton.getSprite().setTranslateY(gridStartY + blendedRow    * cellSizePixels);
     }
 
-	// Initializes resources and starts the game
-	public void startNewGame(double bones, double money) {
-		this.bones = bones;
-		this.money = money;
-		bonesTextbox.setText(String.format("%.0f", bones));
-		moneyTextbox.setText(String.format("%.0f", money));
-		buildGameGrid();
-		startGameLoop();
-		loadTowerCards();
-	}
+    // Initializes resources and starts the game
+    public void startNewGame(double bones, double money) {
+        this.bones = bones;
+        this.money = money;
+        bonesTextbox.setText(String.format("%.0f", bones));
+        moneyTextbox.setText(String.format("%.0f", money));
+        buildGameGrid();
+        startGameLoop();
+        loadTowerCards();
+    }
 
-	// Delegates each frame to the spawner and skeleton movement logic
-	private void update(double delta) {
-		updateSpawner(delta);
-		updateSkeletons(delta);
-	}
+    // Delegates each frame to the spawner and skeleton movement logic
+    private void update(double delta) {
+        updateSpawner(delta);
+        updateSkeletons(delta);
+    }
 
-	// Tracks elapsed time and spawns a new skeleton when the random interval expires
-	private void updateSpawner(double delta) {
-		spawnAccumulator += delta;
-		if (spawnAccumulator >= nextSpawnTime) {
-			spawnAccumulator = 0;
-			// Pick a new random delay for the next spawn
-			nextSpawnTime = SPAWN_INTERVAL_MIN + random.nextDouble() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
-			spawnSkeleton();
-		}
-	}
+    // Tracks elapsed time and spawns a new skeleton when the random interval expires
+    private void updateSpawner(double delta) {
+        spawnAccumulator += delta;
+        if (spawnAccumulator >= nextSpawnTime) {
+            spawnAccumulator = 0;
+            // Pick a new random delay for the next spawn
+            nextSpawnTime = SPAWN_INTERVAL_MIN + random.nextDouble() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
+            spawnSkeleton();
+        }
+    }
 
-	// Advances every active skeleton along the path and removes any that have reached the end
-	private void updateSkeletons(double delta) {
-		List<SkeletonEnemy> toRemove = new ArrayList<>();
-		for (SkeletonEnemy skeleton : activeSkeletons) {
-			skeleton.setProgress(skeleton.getProgress() + delta); // progress advances at 1 cell per second
-			if (skeleton.getProgress() >= path.size() - 1) {
-				toRemove.add(skeleton);
-				continue;
-			}
-			positionSkeleton(skeleton);
-		}
-		// Remove finished skeletons from the scene, the enemy list, and the active list
-		toRemove.forEach(s -> {
-			gameMapPane.getChildren().remove(s.getSprite());
-			Skeleton.enemyList.remove(s);
-			activeSkeletons.remove(s);
-		});
-	}
+    // Advances every active skeleton along the path and removes any that have reached the end
+    private void updateSkeletons(double delta) {
+        List<SkeletonEnemy> toRemove = new ArrayList<>();
+        for (SkeletonEnemy skeleton : activeSkeletons) {
+            skeleton.setProgress(skeleton.getProgress() + delta); // progress advances at 1 cell per second
+            if (skeleton.getProgress() >= path.size() - 1) {
+                toRemove.add(skeleton);
+                continue;
+            }
+            positionSkeleton(skeleton);
+        }
+        // Remove finished skeletons from the scene, the enemy list, and the active list
+        toRemove.forEach(s -> {
+            gameMapPane.getChildren().remove(s.getSprite());
+            Skeleton.enemyList.remove(s);
+            activeSkeletons.remove(s);
+        });
+    }
 
-	public double getBones() {
-		return bones;
-	}
+    public double getBones() {
+        return bones;
+    }
 
-	public void setBones(double bones) {
-		this.bones = bones;
-	}
+    public void setBones(double bones) {
+        this.bones = bones;
+    }
 
-	public double getMoney() {
-		return money;
-	}
+    public double getMoney() {
+        return money;
+    }
 
-	public void setMoney(double money) {
-		this.money = money;
-	}
+    public void setMoney(double money) {
+        this.money = money;
+    }
 
 }

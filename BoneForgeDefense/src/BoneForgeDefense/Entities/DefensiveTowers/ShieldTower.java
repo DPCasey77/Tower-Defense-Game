@@ -8,6 +8,7 @@ public class ShieldTower extends DefensiveTower {
             "Shield Tower",									//Tower Name
             TowerType.DEFENSIVE,							//Tower Type
             50);											//Tower Range
+        this.cost = 75;
     }
 
 }
