@@ -17,6 +17,23 @@ public abstract class OffensiveTower extends Tower{
 		this.fireRate=fireRate;
 	}
 	
+	// Counts down the fire timer by delta seconds.
+	// Returns true (and resets the timer) when it is time to fire the next shot.
+	// The timer only advances while a target is available, so the tower fires
+	// immediately when an enemy first enters range.
+	public boolean advanceFireTimer(double delta) {
+		fireTick -= delta;
+		if (fireTick <= 0) {
+			fireTick = 1.0 / fireRate;
+			return true;
+		}
+		return false;
+	}
+
+	public double getRange()    { return range; }
+	public double getDamage()   { return damage; }
+	public double getFireRate() { return fireRate; }
+
 	public abstract void shoot();
 	public abstract int getTarget();
 

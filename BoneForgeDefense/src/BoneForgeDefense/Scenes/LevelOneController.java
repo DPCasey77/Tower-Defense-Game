@@ -25,48 +25,52 @@ import BoneForgeDefense.Node;
 import BoneForgeDefense.PathFinder;
 import BoneForgeDefense.Entities.Skeleton;
 import BoneForgeDefense.Entities.Tower;
+import BoneForgeDefense.Entities.Projectile;
 import BoneForgeDefense.Entities.Skeletons.SkeletonEnemy;
 import BoneForgeDefense.Entities.OffensiveTowers.BoneBusterTower;
+import BoneForgeDefense.Entities.OffensiveTowers.OffensiveTower;
 import BoneForgeDefense.Entities.DefensiveTowers.ShieldTower;
 import BoneForgeDefense.Entities.SupportTowers.SlowTower;
 
 
 public class LevelOneController {
 
-    // --- Game state ---
+	// Game state variables
     private long lastNanoSecond = 0;
     private Boolean gameOver = false;
 
     private double bones;
     private double money;
 
-    // --- Enemy spawning ---
     // Seconds between each skeleton spawn (chosen randomly within this range)
     private static final double SPAWN_INTERVAL_MIN = 3.0;
     private static final double SPAWN_INTERVAL_MAX = 8.0;
 
-    // --- Map / grid ---
+    // Map / grid variables
     private List<Node> path = new ArrayList<>();   // ordered list of nodes from start to end
     private Node[][] mapNodes;                     // full grid of node data (used for cell styles and hover highlights)
     private Pane[][] gridCells = new Pane[MAP_ROWS][MAP_COLS]; // references to each visual grid cell
     private GridPane gameGrid;
 
-    // --- Skeleton tracking ---
-    private final List<SkeletonEnemy> activeSkeletons = new ArrayList<>();
+    // Skeleton tracking variables
+    private final List<SkeletonEnemy> activeSkeletons  = new ArrayList<>();
+
+    // Projectile tracking variables
+    private final List<Projectile> activeProjectiles = new ArrayList<>();
     private double spawnAccumulator = 0;  // time elapsed since the last spawn
     private double nextSpawnTime = 0;     // seconds until the next spawn (re-randomized after each spawn)
     private final Random random = new Random();
 
-    // --- Tower placement ---
+    // Tower placement variables
     // When the player clicks a tower card, pendingTower holds the selected tower
-    // until they either click a valid cell to place it, or press Esc to cancel.
+    // Pressing Esc cancels
     private Tower pendingTower = null;
     // A factory that creates a fresh instance of the selected tower type on placement
     private Supplier<Tower> pendingTowerSupplier = null;
     // Tracks which tower occupies each grid cell (null = empty)
     private Tower[][] placedTowers = new Tower[MAP_ROWS][MAP_COLS];
 
-    // --- FXML bindings ---
+    // FXML bindings 
     @FXML private Label bonesTextbox;
     @FXML private Label moneyTextbox;
     @FXML private Label placementStatusLabel; // shows instructions while in tower placement mode
@@ -77,7 +81,7 @@ public class LevelOneController {
     @FXML private HBox defensiveTowerContainer;
     @FXML private HBox supportTowerContainer;
 
-    // --- Map definition ---
+    // Map definition 
     // 0 = open (tower-placeable), 1 = wall (tower-placeable), 2 = start, 3 = end
     private static final int MAP_ROWS = 50;
     private static final int MAP_COLS = 50;
@@ -159,9 +163,8 @@ public class LevelOneController {
         }.start();
     }
 
-    // Builds one shop card per tower and adds it to the correct tab container.
-    // Each tower is paired with a factory (Supplier) so a fresh instance can be
-    // created when the player actually places it on the grid.
+    // Builds one shop card per tower and adds it to the correct tab container
+    // Each tower is paired with a Supplier so a new instance can be created when placed on the grid
     private void loadTowerCards() {
         offensiveTowerContainer.getChildren().add(
             createTowerCard(new BoneBusterTower(0, 0), () -> new BoneBusterTower(0, 0)));
@@ -196,15 +199,14 @@ public class LevelOneController {
         towerCard.setMinWidth(CARD_WIDTH);
         towerCard.setMaxWidth(CARD_WIDTH);
 
-        // Clicking the card begins the placement process instead of immediately buying
+        // Clicking the card begins the placement process
         towerCard.setOnMouseClicked(e -> startPlacementMode(tower, factory));
 
         return towerCard;
     }
 
-    // Enters tower placement mode for the given tower type.
-    // The player must then click a valid grid cell to place it, or press Esc to cancel.
-    // Money is NOT deducted here — only when the tower is actually placed.
+    // Enters tower placement mode for the given tower type
+    // Pressing Esc cancels
     private void startPlacementMode(Tower tower, Supplier<Tower> factory) {
         if (money < tower.getCost()) {
             placementStatusLabel.setText("Not enough money for " + tower.getName() + "!");
@@ -219,8 +221,7 @@ public class LevelOneController {
         gameMapPane.setCursor(Cursor.CROSSHAIR);
     }
 
-    // Exits placement mode without placing a tower.
-    // Called when the player presses Esc, or if placement completes or fails.
+    // Exits placement mode without placing a tower
     private void cancelPlacementMode() {
         pendingTower = null;
         pendingTowerSupplier = null;
@@ -228,21 +229,19 @@ public class LevelOneController {
         gameMapPane.setCursor(Cursor.DEFAULT);
     }
 
-    // Called when a grid cell is clicked.
-    // If a tower is pending, validates the cell and places the tower there.
+    // Called when a grid cell is clicked
     private void onCellClicked(int row, int col) {
         // Ignore clicks when not in placement mode
         if (pendingTower == null) return;
 
-        // Only cells marked 0 (open) or 1 (wall) accept towers;
-        // start (2) and end (3) cells are off-limits
+        // Only cells marked 0 (open) or 1 (wall) accept towers
         int cellType = MAP[row][col];
         if (cellType != 0 && cellType != 1) return;
 
         // Block stacking a second tower on the same cell
         if (placedTowers[row][col] != null) return;
 
-        // Re-check affordability in case money changed since placement mode started
+        // Re-check if player can afford tower
         if (money < pendingTower.getCost()) {
             placementStatusLabel.setText("Not enough money!");
             cancelPlacementMode();
@@ -252,10 +251,9 @@ public class LevelOneController {
         placeTowerAt(row, col);
     }
 
-    // Creates a fresh tower instance, renders its sprite in the target cell,
-    // and deducts the cost — completing the placement transaction.
+    // Creates a fresh tower instance, renders it in the cell and deducts the cost
     private void placeTowerAt(int row, int col) {
-        // Instantiate a real tower (not the display prototype from the shop card)
+        // Instantiate a tower
         Tower newTower = pendingTowerSupplier.get();
         placedTowers[row][col] = newTower;
 
@@ -290,7 +288,7 @@ public class LevelOneController {
         mapNodes = pathFinder.getNodes();
         path = pathFinder.getOrderedPath();
 
-        // Constrain the grid to a square (min of pane width and height) so cells are always square
+        // Constrain the grid to a square so cells are always square
         GridPane grid = new GridPane();
         gameGrid = grid;
         var squareSize = Bindings.min(gameMapPane.widthProperty(), gameMapPane.heightProperty());
@@ -366,6 +364,7 @@ public class LevelOneController {
     // Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
     private void spawnSkeleton() {
         SkeletonEnemy skeleton = new SkeletonEnemy(0, 0, "/BoneForgeDefense/Sprites/skeleton.png");
+        skeleton.setHealth(100.0); // starting health — reduced by projectile hits
 
         // Configure the sprite inherited from Entity for overlay display
         skeleton.getSprite().setPreserveRatio(false);
@@ -378,41 +377,35 @@ public class LevelOneController {
     }
 
     // Moves the skeleton's image to the correct pixel position on screen.
-    // Because progress is a decimal (e.g. 3.75), the skeleton sits between two path
-    // nodes and we blend between them so the movement looks smooth.
+    // Because progress is a decimal the skeleton sits between two path nodes and blends between them
     private void positionSkeleton(SkeletonEnemy skeleton) {
 
-        // --- Step 1: Figure out which two path nodes the skeleton is between ---
-
-        // The whole number part of progress is the index of the node the skeleton just passed.
-        // Example: progress = 3.75  →  currentNodeIndex = 3
+    	// Figure out which two path nodes the skeleton is between
+        // The whole number part of progress is the index of the node the skeleton just passe
         int currentNodeIndex = (int) skeleton.getProgress();
 
-        // Safety check: make sure there is always a "next" node to move toward.
-        // Without this, we could crash when the skeleton is near the very end.
+        // Make sure there is always a next node to move toward
         currentNodeIndex = Math.min(currentNodeIndex, path.size() - 2);
 
-        // The decimal part (0.0 to 1.0) tells us how far between the two nodes we are.
-        // Example: progress = 3.75  →  blendFactor = 0.75  (75% of the way to the next node)
+        // The decimal part is how far between the two nodes the skeleton is
         double blendFactor = skeleton.getProgress() - currentNodeIndex;
 
-        // --- Step 2: Blend between the two nodes to get a smooth in-between position ---
-
+        // Blend between the two nodes to get a smooth in-between position
         Node currentNode = path.get(currentNodeIndex);
         Node nextNode    = path.get(currentNodeIndex + 1);
 
         // Interpolate: start at currentNode and move blendFactor of the way toward nextNode.
-        // Note: getY() = column, getX() = row (this is how PathFinder stores coordinates)
+        // Note: getY() = column
         double blendedColumn = currentNode.getY() + blendFactor * (nextNode.getY() - currentNode.getY());
+        // getX() = row
         double blendedRow    = currentNode.getX() + blendFactor * (nextNode.getX() - currentNode.getX());
 
-        // --- Step 3: Convert the grid position to pixels on screen ---
+        // Convert the grid position to pixels on screen 
 
-        // How wide/tall is one grid cell in pixels?
+        // Get width of grid cell in pixels
         double cellSizePixels = gameGrid.getWidth() / MAP_COLS;
 
-        // The grid is centered inside the pane, so we need to know how far from the
-        // pane's top-left corner the grid actually starts.
+        // Resize the skeleton image to match one cell, then place it at the right spot
         double gridStartX = gameGrid.getBoundsInParent().getMinX();
         double gridStartY = gameGrid.getBoundsInParent().getMinY();
 
@@ -434,10 +427,122 @@ public class LevelOneController {
         loadTowerCards();
     }
 
-    // Delegates each frame to the spawner and skeleton movement logic
+    // Delegates each frame to all game subsystems
     private void update(double delta) {
         updateSpawner(delta);
-        updateSkeletons(delta);
+        updateTowers(delta);      // check fire timers, spawn projectiles
+        updateProjectiles(delta); // move projectiles, apply damage on hit
+        updateSkeletons(delta);   // advance skeleton positions, remove finished ones
+    }
+
+    // Iterates over every placed tower, advances its fire timer, and spawns a
+    // projectile aimed at the best in-range target when the timer expires.
+    private void updateTowers(double delta) {
+        // Pixel dimensions needed to convert grid row/col into screen coordinates
+        double cellSize   = gameGrid.getWidth() / MAP_COLS;
+        double gridStartX = gameGrid.getBoundsInParent().getMinX();
+        double gridStartY = gameGrid.getBoundsInParent().getMinY();
+
+        for (int row = 0; row < MAP_ROWS; row++) {
+            for (int col = 0; col < MAP_COLS; col++) {
+                Tower tower = placedTowers[row][col];
+                if (tower == null) continue;
+                // Only offensive towers can fire projectiles
+                if (!(tower instanceof OffensiveTower)) continue;
+
+                OffensiveTower offTower = (OffensiveTower) tower;
+
+                // The pixel center of this tower's grid cell
+                double towerPixelX = gridStartX + col * cellSize + cellSize / 2.0;
+                double towerPixelY = gridStartY + row * cellSize + cellSize / 2.0;
+
+                // Find the highest-progress in-range skeleton.
+                // If no target is in range, skip
+                SkeletonEnemy target = findTarget(offTower, towerPixelX, towerPixelY);
+                if (target == null) continue;
+
+                // Advance the fire timer or skip this tower if it is still cooling down
+                if (!offTower.advanceFireTimer(delta)) continue;
+                
+                // Place to add sound effects
+                offTower.shoot(); 
+
+                // Create a projectile and overlay it on the game map
+                Projectile proj = new Projectile(
+                    towerPixelX, towerPixelY, target, 200.0, offTower.getDamage());
+                StackPane.setAlignment(proj.getShape(), Pos.TOP_LEFT);
+                activeProjectiles.add(proj);
+                gameMapPane.getChildren().add(proj.getShape());
+            }
+        }
+    }
+
+    // Returns the in-range skeleton that is furthest along the path,
+    // or null if no skeleton is within the tower's range.
+    private SkeletonEnemy findTarget(OffensiveTower tower,
+                                     double towerPixelX, double towerPixelY) {
+        SkeletonEnemy bestTarget   = null;
+        double        bestProgress = -1;
+        double        range        = tower.getRange();
+
+        for (SkeletonEnemy skeleton : activeSkeletons) {
+            // Measure from the tower center to the skeleton sprite center
+            double skelCenterX = skeleton.getSprite().getTranslateX()
+                                 + skeleton.getSprite().getFitWidth()  / 2.0;
+            double skelCenterY = skeleton.getSprite().getTranslateY()
+                                 + skeleton.getSprite().getFitHeight() / 2.0;
+
+            double distance = Math.sqrt(Math.pow(skelCenterX - towerPixelX, 2)
+                                      + Math.pow(skelCenterY - towerPixelY, 2));
+
+            // Keep the skeleton that is both in range AND furthest along the path
+            if (distance <= range && skeleton.getProgress() > bestProgress) {
+                bestProgress = skeleton.getProgress();
+                bestTarget   = skeleton;
+            }
+        }
+        return bestTarget;
+    }
+
+    // Moves every active projectile toward its target and resolves hits.
+    // Projectiles are removed when they hit, or when their target has already gone.
+    private void updateProjectiles(double delta) {
+        List<Projectile> toRemove = new ArrayList<>();
+
+        for (Projectile proj : activeProjectiles) {
+            // Discard the projectile if the target was killed by another shot first
+            if (proj.isTargetGone()) {
+                toRemove.add(proj);
+                continue;
+            }
+
+            proj.moveTowardsTarget(delta);
+
+            if (proj.hasHitTarget()) {
+                SkeletonEnemy target = proj.getTarget();
+                target.setHealth(target.getHealth() - proj.getDamage());
+
+                // Kill the skeleton when it runs out of health
+                if (target.getHealth() <= 0) {
+                    killSkeleton(target);
+                }
+                toRemove.add(proj);
+            }
+        }
+
+        // Remove spent projectiles from the scene and tracking list
+        toRemove.forEach(p -> {
+            gameMapPane.getChildren().remove(p.getShape());
+            activeProjectiles.remove(p);
+        });
+    }
+
+    // Removes a skeleton from the scene and all tracking collections.
+    // Called both when a skeleton is killed by damage and when it reaches the path end.
+    private void killSkeleton(SkeletonEnemy skeleton) {
+        gameMapPane.getChildren().remove(skeleton.getSprite());
+        Skeleton.enemyList.remove(skeleton);
+        activeSkeletons.remove(skeleton);
     }
 
     // Tracks elapsed time and spawns a new skeleton when the random interval expires
@@ -462,12 +567,8 @@ public class LevelOneController {
             }
             positionSkeleton(skeleton);
         }
-        // Remove finished skeletons from the scene, the enemy list, and the active list
-        toRemove.forEach(s -> {
-            gameMapPane.getChildren().remove(s.getSprite());
-            Skeleton.enemyList.remove(s);
-            activeSkeletons.remove(s);
-        });
+        // killSkeleton handles removal from the scene, enemyList, and activeSkeletons
+        toRemove.forEach(s -> killSkeleton(s));
     }
 
     public double getBones() {
