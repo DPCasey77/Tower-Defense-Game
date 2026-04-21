@@ -19,7 +19,7 @@ public abstract class Skeleton extends Entity{
 	public double getRange(double otherX, double otherY) {
 		//does not sqrt the result to avoid costly calculations when called every frame. square other range values to compare to this value
 
-		// Use the sprite's pixel center — xPos/yPos are not updated after spawn
+		// Use the sprite's pixel center because xPos/yPos are not updated after spawn
 		double centerX = sprite.getTranslateX() + sprite.getFitWidth()  / 2.0;
 		double centerY = sprite.getTranslateY() + sprite.getFitHeight() / 2.0;
     	double distance = Math.pow(centerX - otherX, 2) + Math.pow(centerY - otherY, 2);

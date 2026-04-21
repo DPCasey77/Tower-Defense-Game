@@ -40,6 +40,11 @@ public class LevelOneController {
     private Boolean gameOver = false;
 
     private double bones;
+    private int kills;
+    private int lives;
+
+    // Starting lives for a new game
+    private static final int STARTING_LIVES = 20;
 
     // Seconds between each skeleton spawn (chosen randomly within this range)
     private static final double SPAWN_INTERVAL_MIN = 3.0;
@@ -71,6 +76,8 @@ public class LevelOneController {
 
     // FXML bindings
     @FXML private Label bonesTextbox;
+    @FXML private Label killsTextbox;
+    @FXML private Label livesTextbox;
     @FXML private Label placementStatusLabel; // shows instructions while in tower placement mode
 
     @FXML private StackPane gameMapPane;
@@ -346,7 +353,7 @@ public class LevelOneController {
             activeSkeletons.forEach(s -> s.updatePosition(path, gameGrid, MAP_COLS)));
 
         // Register the Escape key to cancel placement mode.
-        // We wait until the scene is attached because the scene is not yet
+        // Wait until the scene is attached because the scene is not yet
         // available at the time buildGameGrid() runs.
         gameMapPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
@@ -371,7 +378,11 @@ public class LevelOneController {
     // Initializes resources and starts the game
     public void startNewGame(double bones) {
         this.bones = bones;
+        this.kills = 0;
+        this.lives = STARTING_LIVES;
         bonesTextbox.setText(String.format("%.0f", bones));
+        killsTextbox.setText(String.valueOf(kills));
+        livesTextbox.setText(String.valueOf(lives));
         buildGameGrid();
         startGameLoop();
         loadTowerCards();
@@ -406,25 +417,37 @@ public class LevelOneController {
             }
         }
 
-        // Move projectiles, apply damage on hit; remove spent ones from the scene and tracking list
+        // Move projectiles and apply damage on hit
+        // Remove spent ones from the scene and tracking list
         Projectile.updateAll(delta, activeProjectiles, this::killSkeleton)
             .forEach(p -> {
                 gameMapPane.getChildren().remove(p.getShape());
                 activeProjectiles.remove(p);
             });
 
-        // Advance every skeleton; killSkeleton handles scene and list cleanup for those that finish
-        Skeleton.updateAll(delta, path, gameGrid, MAP_COLS).forEach(this::killSkeleton);
+        // Advance every skeleton
+        // escapeSkeleton handles cleanup and life deduction for those that finish
+        Skeleton.updateAll(delta, path, gameGrid, MAP_COLS).forEach(this::escapeSkeleton);
     }
 
-    // Removes a skeleton from the scene and all tracking collections.
-    // Called both when a skeleton is killed by damage and when it reaches the path end.
-    // Awards bones based on the enemy type when killed by a tower (reward is still given on path end).
+    // Called when a skeleton is destroyed by a tower
+    // Awards bones and increments kill counter.
     private void killSkeleton(SkeletonEnemy skeleton) {
         skeleton.removeFromScene(gameMapPane);
         activeSkeletons.remove(skeleton);
         bones += skeleton.getBoneReward();
         bonesTextbox.setText(String.format("%.0f", bones));
+        kills++;
+        killsTextbox.setText(String.valueOf(kills));
+    }
+
+    // Called when a skeleton reaches the path end
+    // Decrements lives and gives no bone reward.
+    private void escapeSkeleton(SkeletonEnemy skeleton) {
+        skeleton.removeFromScene(gameMapPane);
+        activeSkeletons.remove(skeleton);
+        lives--;
+        livesTextbox.setText(String.valueOf(lives));
     }
 
     // Tracks elapsed time and spawns a new skeleton when the random interval expires
