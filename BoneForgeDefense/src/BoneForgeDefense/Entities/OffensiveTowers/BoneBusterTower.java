@@ -31,7 +31,7 @@ public class BoneBusterTower extends OffensiveTower {
     }
 
 	@Override
-	public int getTarget() {
+	public int getTarget(double xPos, double yPos) {
 		List<InRangePair>inRangeEnemies = new ArrayList<InRangePair>();
 		int counter = 0;
 		for(Skeleton e : Skeleton.enemyList) {

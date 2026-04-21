@@ -9,4 +9,10 @@ public class NecromancerEnemy extends Skeleton{
 		// TODO Auto-generated constructor stub
 	}
 
+	@Override
+	public int getBoneReward() {
+		// TODO Auto-generated method stub
+		return 20;
+	}
+
 }

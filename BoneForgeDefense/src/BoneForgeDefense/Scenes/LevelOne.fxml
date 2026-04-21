@@ -34,13 +34,10 @@
               </columnConstraints>
               <rowConstraints>
                 <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <Label text="Money:" />
-                  <Label fx:id="moneyTextbox" text="Current Money" GridPane.columnIndex="1" />
-                  <Label text="Bones:" GridPane.rowIndex="1" />
-                  <Label fx:id="bonesTextbox" text="Current Bones" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label text="Bones:" />
+                  <Label fx:id="bonesTextbox" text="Current Bones" GridPane.columnIndex="1" />
                </children>
             </GridPane>
          </left>

@@ -23,7 +23,7 @@ public class MainMenuController {
     @FXML
     void startNewGame(MouseEvent event) {
     	SceneSelector.launchLevelOneScene();
-        SceneSelector.getLevelOneController().startNewGame(100,100);
+        SceneSelector.getLevelOneController().startNewGame(100);
     }
     
     @FXML

@@ -1,5 +1,9 @@
 package BoneForgeDefense.Entities;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import BoneForgeDefense.Entities.Skeletons.SkeletonEnemy;
@@ -9,8 +13,8 @@ public class Projectile {
     // How close the center of the projectile must get to count as a hit
     private static final double HIT_DISTANCE = 8.0;
 
-    private double x;               
-    private double y;               
+    private double x;
+    private double y;
     private final SkeletonEnemy target;
     private final double speed;     // pixels per second
     private final double damage;    // health subtracted from the target on hit
@@ -37,13 +41,8 @@ public class Projectile {
     // Uses delta time to keep  speed is frame-rate independent
     public void moveTowardsTarget(double delta) {
         // Aim at the center of the target's sprite
-        double targetCenterX = target.getSprite().getTranslateX()
-                               + target.getSprite().getFitWidth()  / 2.0;
-        double targetCenterY = target.getSprite().getTranslateY()
-                               + target.getSprite().getFitHeight() / 2.0;
-
-        double dx = targetCenterX - x;
-        double dy = targetCenterY - y;
+        double dx = target.getSpriteCenterX() - x;
+        double dy = target.getSpriteCenterY() - y;
         double distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance > 0) {
@@ -59,12 +58,8 @@ public class Projectile {
 
     // Returns true when the projectile center is within HIT_DISTANCE pixels of the target center
     public boolean hasHitTarget() {
-        double targetCenterX = target.getSprite().getTranslateX()
-                               + target.getSprite().getFitWidth()  / 2.0;
-        double targetCenterY = target.getSprite().getTranslateY()
-                               + target.getSprite().getFitHeight() / 2.0;
-        double dx = targetCenterX - x;
-        double dy = targetCenterY - y;
+        double dx = target.getSpriteCenterX() - x;
+        double dy = target.getSpriteCenterY() - y;
         return Math.sqrt(dx * dx + dy * dy) <= HIT_DISTANCE;
     }
 
@@ -78,4 +73,36 @@ public class Projectile {
 
     // The JavaFX circle shape
     public Circle getShape() { return shape; }
+
+    // Moves every active projectile toward its target and resolves hits.
+    // onKilled is called for any skeleton that reaches zero health, so the caller
+    // can handle scene and list cleanup without Projectile needing a Pane reference.
+    // Returns the list of spent projectiles for the caller to remove from the scene.
+    public static List<Projectile> updateAll(double delta, List<Projectile> activeProjectiles,
+                                             Consumer<SkeletonEnemy> onKilled) {
+        List<Projectile> spent = new ArrayList<>();
+
+        for (Projectile proj : activeProjectiles) {
+            // Discard the projectile if the target was killed by another shot first
+            if (proj.isTargetGone()) {
+                spent.add(proj);
+                continue;
+            }
+
+            proj.moveTowardsTarget(delta);
+
+            if (proj.hasHitTarget()) {
+                SkeletonEnemy target = proj.getTarget();
+                target.setHealth(target.getHealth() - proj.getDamage());
+
+                // Kill the skeleton when it runs out of health
+                if (target.getHealth() <= 0) {
+                    onKilled.accept(target);
+                }
+                spent.add(proj);
+            }
+        }
+
+        return spent;
+    }
 }
