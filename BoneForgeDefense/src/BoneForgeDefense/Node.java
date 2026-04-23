@@ -3,7 +3,8 @@ package BoneForgeDefense;
 public class Node {
 	private int X;
 	private int Y;
-
+	
+	public int bones = 0;
 	public double tCost = 1000000.0;
 	public double sCost = 1000000.0;
 	public double eCost = 1000000.0;
@@ -54,5 +55,13 @@ public class Node {
 		
 		this.tCost = sCost + eCost;
 	}
+	
+	public double getRange(double otherX, double otherY) {
+		return (this.X-otherX)*(this.X-otherX)+(this.Y-otherY)*(this.Y*otherY);
+	}
+	
+	public void setBones(int bones) {this.bones = bones;}
+	public int getBones() {return this.bones;}
+	public void addBones(int bones) {this.bones += bones;}
 	
 }
