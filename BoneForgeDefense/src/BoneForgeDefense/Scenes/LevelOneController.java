@@ -52,7 +52,7 @@ public class LevelOneController {
 
     // Map / grid variables
     private List<Node> path = new ArrayList<>();   // ordered list of nodes from start to end
-    private Node[][] mapNodes;                     // full grid of node data (used for cell styles and hover highlights)
+    public static Node[][] mapNodes;                     // full grid of node data (used for cell styles and hover highlights)
     private Pane[][] gridCells = new Pane[MAP_ROWS][MAP_COLS]; // references to each visual grid cell
     private GridPane gameGrid;
 
@@ -88,8 +88,8 @@ public class LevelOneController {
 
     // Map definition 
     // 0 = open (tower-placeable), 1 = wall (tower-placeable), 2 = start, 3 = end
-    private static final int MAP_ROWS = 50;
-    private static final int MAP_COLS = 50;
+    public static final int MAP_ROWS = 50;
+    public static final int MAP_COLS = 50;
     private static final int[][] MAP = {
         {2,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0},
         {0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0},
@@ -368,7 +368,7 @@ public class LevelOneController {
 
     // Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
     private void spawnSkeleton() {
-        SkeletonEnemy skeleton = new SkeletonEnemy(0, 0, "/BoneForgeDefense/Sprites/skeleton.png");
+        SkeletonEnemy skeleton = new SkeletonEnemy(0, 0);
         gameMapPane.getChildren().add(skeleton.getSprite());
 
         activeSkeletons.add(skeleton);
