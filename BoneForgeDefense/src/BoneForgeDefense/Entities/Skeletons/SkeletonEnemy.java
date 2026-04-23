@@ -12,22 +12,20 @@ import BoneForgeDefense.Entities.Skeleton;
 
 public class SkeletonEnemy extends Skeleton {
 
-    // Starting health applied to every new skeleton — reduced by projectile hits
-    private static final double DEFAULT_HEALTH = 100.0;
-
-    // Bones awarded to the player for killing this enemy type
-    private static final int BONE_REWARD = 10;
-
-    // Rate at which progress advances along the path (cells per second)
-    private static final double MOVE_SPEED = 1.0;
-
     // Continuous position along the path:
     // integer part = current node index, fractional part = how far between that node and the next
     private double progress = 0.0;
+    private static String spritePath = "/BoneForgeDefense/Sprites/skeleton.png";
 
-    public SkeletonEnemy(double xPos, double yPos, String spritePath) {
+    public SkeletonEnemy(double xPos, double yPos) {
         super(xPos, yPos, spritePath);
-        setHealth(DEFAULT_HEALTH);
+        
+        // Starting health applied to every new skeleton — reduced by projectile hits
+        health = 100;
+        // Rate at which progress advances along the path (cells per second)
+		moveSpeed=1.0;
+		// Bones awarded to the player for killing this enemy type
+		boneReward=10;
 
         // Configure the sprite inherited from Entity for overlay display
         sprite.setPreserveRatio(false);
@@ -45,7 +43,7 @@ public class SkeletonEnemy extends Skeleton {
 
     // Advances progress along the path by delta seconds
     public void advance(double delta) {
-        progress += delta * MOVE_SPEED;
+        progress += delta * this.getSpeed();
     }
 
     // Returns true when the skeleton has reached the end node of the path
@@ -109,8 +107,4 @@ public class SkeletonEnemy extends Skeleton {
         Skeleton.enemyList.remove(this);
     }
 
-    @Override
-    public int getBoneReward() {
-        return BONE_REWARD;
-    }
 }

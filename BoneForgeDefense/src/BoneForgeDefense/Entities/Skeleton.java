@@ -9,7 +9,15 @@ import BoneForgeDefense.Node;
 import BoneForgeDefense.Entities.Skeletons.SkeletonEnemy;
 
 public abstract class Skeleton extends Entity{
-	private double health;
+	protected double health;
+	protected double moveSpeed;
+	protected double boneReward;
+	
+	//stat modifiers for effects such as slow towers
+	private double moveSpeedMod = 1.0;
+	private double healthMod = 1.0;
+	private double boneRewardMod = 1.0;
+	
 	public static List<Skeleton> enemyList = new ArrayList<Skeleton>();
 	public Skeleton(double xPos, double yPos, String spritePath) {
 		super(xPos, yPos, spritePath);
@@ -27,15 +35,35 @@ public abstract class Skeleton extends Entity{
     }
 
 	public double getHealth() {
-		return health;
+		return health*healthMod;
 	}
 
 	public void setHealth(double health) {
 		this.health = health;
 	}
-
-	// Bones awarded to the player when this skeleton is killed
-	public abstract int getBoneReward();
+	public void setHealthMod(double mod) {
+		this.healthMod = mod;
+	}
+	
+	public double getSpeed() {
+		return moveSpeed*moveSpeedMod;
+	}
+	public void setMoveSpeed(double speed) {
+		this.moveSpeed=speed;
+	}
+	public void setMoveSpeedMod(double mod) {
+		this.moveSpeedMod=mod;
+	}
+	
+	public double getBoneReward() {
+		return boneReward*boneRewardMod;
+	}
+	public void setBoneReward(double reward) {
+		this.boneReward=reward;
+	}
+	public void setBoneRewardMod(double mod) {
+		this.boneReward=mod;
+	}
 
 	// Advances every active skeleton along the path and returns a list of those
 	// that have reached the end so the caller can remove them from the scene.
