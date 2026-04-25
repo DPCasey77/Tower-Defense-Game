@@ -18,7 +18,7 @@ public class NecromancerEnemy extends Skeleton{
 
 	
 	public void castRessurrect() {
-		
+
 	}
 	
 	private double getBonesInRange(){

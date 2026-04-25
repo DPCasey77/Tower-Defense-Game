@@ -1,6 +1,8 @@
 package BoneForgeDefense;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class PathFinder {
@@ -31,10 +33,11 @@ public class PathFinder {
 	 * 00000000003
 	 * 
 	 */
-	public PathFinder(int Cols, int Rows, int[][] map) {
+	public PathFinder(int Cols, int Rows, int[][] map, int startX, int startY, int endX, int endY) {
 		this.cols = Cols;
 		this.rows = Rows;
 		this.node = new Node[rows][cols];
+		
 		//Initializes base map
 		for(int i = 0; i<rows; i++) {
 			for(int j = 0; j<cols; j++) {
@@ -43,14 +46,10 @@ public class PathFinder {
 				if (map[i][j] == 1) {
 					node[i][j].setIsWall();
 				}
-				else if (map[i][j] == 2) {
-					setStartNode(i,j);
-				}
-				else if (map[i][j] == 3) {
-					setEndNode(i,j);
-				}
 			}
 		}
+		
+		
 		//debug show node positions
 		/*
 		for(int i = 0; i<rows; i++) {
@@ -60,10 +59,11 @@ public class PathFinder {
 			System.out.print("\n");
 		}
 		*/
+		search(startX, startY, endX, endY);
 	}
 	
 	//debug output
-	public void drawMapPath() {
+	public void drawDebugMapPath() {
 		char[][] pathMap = new char[rows][cols];
 		for(int i = 0; i<rows; i++) {
 			for(int j = 0; j<cols; j++) {
@@ -93,10 +93,14 @@ public class PathFinder {
 		}
 	}
 	
-	public void search() {
+	//takes the start x and y and the end x and y to find the best path between them
+	//also used to update path mid round, using current position instead of start position
+	public boolean search(int startX, int startY, int endX, int endY) {
 		int step = 0;
-		int bestNodeIndex = 0;
-		double bestNodeCost = 100000;
+		//int bestNodeIndex = 0;
+		//double bestNodeCost = 100000;
+		setEndNode(endX,endY);
+		setStartNode(startX,startY);
 		currentNode.tCost(startNode,endNode);
 		int maxSteps = rows*cols;
 		
@@ -138,10 +142,13 @@ public class PathFinder {
 				openNode(node[row][col-1]);
 				
 			}
+			//if openList is empty no path exists return false
+			if(openList.isEmpty()) {
+				return false;
+			}
 			
 			
-			for (int i=0; i < openList.size();i++) {
-				openList.get(i).tCost(startNode,endNode);
+			/*for (int i=0; i < openList.size();i++) {
 				
 				//debug code
 				//System.out.println(openList.get(i).getX() + " " + openList.get(i).getY());
@@ -161,19 +168,26 @@ public class PathFinder {
 						bestNodeCost = openList.get(i).tCost;
 					}
 				}
-			}
+			}*/
 			
+			//Node minNode = Collections.min(openList,Comparator.comparingDouble(Node::getTCost));
+			//bestNodeIndex = openList.indexOf(minNode);
 			//debug code
+			
 			//System.out.println(openList.get(bestNodeIndex).getX() + " " + openList.get(bestNodeIndex).getY());
 			//System.out.println("Open list size: " + openList.size());
 			//System.out.println("Best Index: " + bestNodeIndex);
 			
-			currentNode = openList.get(bestNodeIndex);
+			//currentNode = openList.get(bestNodeIndex);
+			currentNode = Collections.min(openList,Comparator.comparingDouble(Node::getTCost));
+			
 			if(currentNode == endNode) {
 				goalReached = true;
 				getPath();
+				return true;
 			}
 		}
+		return false;
 	}
 	
 	private void getPath() {
@@ -190,6 +204,7 @@ public class PathFinder {
 		if (node.getOpen()==false && node.getChecked()==false && node.getWall()==false) {
 			node.setIsOpen();
 			node.setParent(currentNode);
+			node.tCost(startNode,endNode);
 			openList.add(node);
 			
 			//System.out.println("\t opened");

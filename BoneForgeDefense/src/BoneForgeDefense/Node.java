@@ -44,6 +44,7 @@ public class Node {
 	public boolean getOpen() {return open;}
 	public boolean getChecked() {return checked;}
 	public boolean getIsPath() {return isPath;}
+	public double getTCost() {return tCost;}
 	
 	
 	public void tCost(Node startNode, Node endNode) {
