@@ -57,7 +57,7 @@ public class LevelOneController {
     private GridPane gameGrid;
 
     // Skeleton tracking variables
-    private final List<SkeletonEnemy> activeSkeletons  = new ArrayList<>();
+    private final List<Skeleton> activeSkeletons  = new ArrayList<>();
 
     // Projectile tracking variables
     private final List<Projectile> activeProjectiles = new ArrayList<>();
@@ -91,7 +91,7 @@ public class LevelOneController {
     public static final int MAP_ROWS = 50;
     public static final int MAP_COLS = 50;
     private static final int[][] MAP = {
-        {2,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0},
+        {0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0},
         {0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0},
         {0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0},
         {1,1,1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0},
@@ -140,7 +140,7 @@ public class LevelOneController {
         {0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0},
         {1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,0},
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3}
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0}
     };
 
     // Starts the JavaFX AnimationTimer, which calls update() every frame
@@ -288,8 +288,8 @@ public class LevelOneController {
     // Runs PathFinder on the map, then builds and populates the visual GridPane.
     // Also wires up per-cell click and hover handlers for tower placement.
     private void buildGameGrid() {
-        PathFinder pathFinder = new PathFinder(MAP_COLS, MAP_ROWS, MAP);
-        pathFinder.search();
+        PathFinder pathFinder = new PathFinder(MAP_COLS, MAP_ROWS, MAP,0,0,MAP_COLS-1,MAP_ROWS-1);
+        
         mapNodes = pathFinder.getNodes();
         path = pathFinder.getOrderedPath();
 
@@ -443,7 +443,7 @@ public class LevelOneController {
 
     // Called when a skeleton reaches the path end
     // Decrements lives and gives no bone reward.
-    private void escapeSkeleton(SkeletonEnemy skeleton) {
+    private void escapeSkeleton(Skeleton skeleton) {
         skeleton.removeFromScene(gameMapPane);
         activeSkeletons.remove(skeleton);
         lives--;
