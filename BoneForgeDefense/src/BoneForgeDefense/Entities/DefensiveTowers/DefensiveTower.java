@@ -12,5 +12,9 @@ public abstract class DefensiveTower  extends Tower{
 		this.range=range;
 	}
 
+	@Override
+	public double getRange() {
+		return range;
+	}
 
 }

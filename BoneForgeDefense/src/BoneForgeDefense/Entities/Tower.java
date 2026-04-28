@@ -25,4 +25,9 @@ public abstract class Tower extends Entity {
     	return cost;
     }
 
+    // Default tower range that tower subclasses can override 
+    public double getRange() {
+    	return 0;
+    }
+
 }

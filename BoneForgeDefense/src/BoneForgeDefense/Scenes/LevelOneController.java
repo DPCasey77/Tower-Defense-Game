@@ -14,6 +14,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.animation.AnimationTimer;
 
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ import BoneForgeDefense.Entities.OffensiveTowers.BoneBusterTower;
 import BoneForgeDefense.Entities.OffensiveTowers.OffensiveTower;
 import BoneForgeDefense.Entities.DefensiveTowers.ShieldTower;
 import BoneForgeDefense.Entities.SupportTowers.SlowTower;
+import BoneForgeDefense.Entities.SupportTowers.SupportTower;
 
 
 public class LevelOneController {
@@ -73,6 +76,9 @@ public class LevelOneController {
     private Supplier<Tower> pendingTowerSupplier = null;
     // Tracks which tower occupies each grid cell (null = empty)
     private Tower[][] placedTowers = new Tower[MAP_ROWS][MAP_COLS];
+
+    // Range indicator drawn while the cursor is over a placed tower; null when nothing is hovered
+    private Circle hoverRangeCircle = null;
 
     // FXML bindings
     @FXML private Label bonesTextbox;
@@ -270,11 +276,54 @@ public class LevelOneController {
         towerSprite.fitHeightProperty().bind(targetCell.heightProperty());
         targetCell.getChildren().add(towerSprite);
 
+        // Show the tower's range indicator while the cursor hovers over its sprite
+        if (newTower.getRange() > 0) {
+            towerSprite.setOnMouseEntered(e -> showRangeCircle(row, col, newTower));
+            towerSprite.setOnMouseExited(e -> hideRangeCircle());
+        }
+
         // Deduct bones only now that the tower is placed
         bones -= pendingTower.getCost();
         bonesTextbox.setText(String.format("%.0f", bones));
 
         cancelPlacementMode();
+    }
+
+    // Adds a circle range indicator centered on the given tower
+    private void showRangeCircle(int row, int col, Tower tower) {
+        hideRangeCircle();
+
+        // Get the tower's pixel center each time since the grid scales with the window
+        double cellSize   = gameGrid.getWidth() / MAP_COLS;
+        double gridStartX = gameGrid.getBoundsInParent().getMinX();
+        double gridStartY = gameGrid.getBoundsInParent().getMinY();
+        double centerX = gridStartX + col * cellSize + cellSize / 2.0;
+        double centerY = gridStartY + row * cellSize + cellSize / 2.0;
+
+        double range = tower.getRange();
+        Circle circle = new Circle(range);
+        circle.setFill(Color.TRANSPARENT);
+        circle.setStroke(Color.WHITE);
+        circle.setStrokeWidth(2);
+        // Don't let the circle steal mouse events from the tower or cells underneath
+        circle.setMouseTransparent(true);
+        
+        // Subtract the radius of the circle to put it at (centerX, centerY).
+        circle.setTranslateX(centerX - range);
+        circle.setTranslateY(centerY - range);
+        
+        // Shift the circle's bounds to make the top left corner at (0,0)
+        StackPane.setAlignment(circle, Pos.TOP_LEFT);
+        gameMapPane.getChildren().add(circle);
+        hoverRangeCircle = circle;
+    }
+
+    // Removes the currently displayed range indicator if one is active
+    private void hideRangeCircle() {
+        if (hoverRangeCircle != null) {
+            gameMapPane.getChildren().remove(hoverRangeCircle);
+            hoverRangeCircle = null;
+        }
     }
 
     // Returns the CSS background color for a cell based on its node type
@@ -286,7 +335,7 @@ public class LevelOneController {
     }
 
     // Runs PathFinder on the map, then builds and populates the visual GridPane.
-    // Also wires up per-cell click and hover handlers for tower placement.
+    // Handle per-cell click and hover handlers for tower placement.
     private void buildGameGrid() {
         PathFinder pathFinder = new PathFinder(MAP_COLS, MAP_ROWS, MAP,0,0,MAP_COLS-1,MAP_ROWS-1);
         
@@ -354,7 +403,7 @@ public class LevelOneController {
 
         // Register the Escape key to cancel placement mode.
         // Wait until the scene is attached because the scene is not yet
-        // available at the time buildGameGrid() runs.
+        // available when buildGameGrid() runs
         gameMapPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 newScene.setOnKeyPressed(e -> {
@@ -392,28 +441,36 @@ public class LevelOneController {
     private void update(double delta) {
         updateSpawner(delta);
 
-        // Iterate every placed tower and add any fired projectiles to the scene.
-        // Pixel dimensions are computed here because the controller owns the grid layout.
+        // Reset every skeleton's speed mod so slow towers can re-apply their effect this frame
+        Skeleton.resetSpeedMods();
+
+        // Iterate every placed tower and apply the appropriate per-frame logic
+        // Pixel dimensions are calculated here because the controller controls the grid layout
         double cellSize   = gameGrid.getWidth() / MAP_COLS;
         double gridStartX = gameGrid.getBoundsInParent().getMinX();
         double gridStartY = gameGrid.getBoundsInParent().getMinY();
         for (int row = 0; row < MAP_ROWS; row++) {
             for (int col = 0; col < MAP_COLS; col++) {
                 Tower tower = placedTowers[row][col];
-                if (tower == null || !(tower instanceof OffensiveTower)) continue;
+                if (tower == null) continue;
 
                 // The pixel center of this tower's grid cell
                 double towerPixelX = gridStartX + col * cellSize + cellSize / 2.0;
                 double towerPixelY = gridStartY + row * cellSize + cellSize / 2.0;
 
-                // Tower handles targeting, timer, and projectile creation
-                Projectile proj = ((OffensiveTower) tower).update(delta, towerPixelX, towerPixelY);
-                if (proj == null) continue;
+                if (tower instanceof OffensiveTower) {
+                    // Offensive towers handle targeting, timer, and projectile creation
+                    Projectile proj = ((OffensiveTower) tower).update(delta, towerPixelX, towerPixelY);
+                    if (proj == null) continue;
 
-                // Overlay the new projectile on the game map
-                StackPane.setAlignment(proj.getShape(), Pos.TOP_LEFT);
-                activeProjectiles.add(proj);
-                gameMapPane.getChildren().add(proj.getShape());
+                    // Overlay the new projectile on the game map
+                    StackPane.setAlignment(proj.getShape(), Pos.TOP_LEFT);
+                    activeProjectiles.add(proj);
+                    gameMapPane.getChildren().add(proj.getShape());
+                } else if (tower instanceof SupportTower) {
+                    // Support towers apply effects to in-range entities
+                    ((SupportTower) tower).update(delta, towerPixelX, towerPixelY);
+                }
             }
         }
 

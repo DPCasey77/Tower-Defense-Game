@@ -55,6 +55,13 @@ public abstract class Skeleton extends Entity{
 	public void setMoveSpeedMod(double mod) {
 		this.moveSpeedMod=mod;
 	}
+
+	// Resets every active skeleton's movement speed modifier to 1.0
+	public static void resetSpeedMods() {
+		for (Skeleton s : enemyList) {
+			s.setMoveSpeedMod(1.0);
+		}
+	}
 	
 	public double getBoneReward() {
 		return boneReward*boneRewardMod;
@@ -66,8 +73,7 @@ public abstract class Skeleton extends Entity{
 		this.boneReward=mod;
 	}
 
-	// Advances every active skeleton along the path and returns a list of those
-	// that have reached the end so the caller can remove them from the scene.
+	// Advances every active skeleton along the path and returns a list of skeletons that have reached the end
 	public static List<Skeleton> updateAll(double delta, List<Node> path, GridPane gameGrid, int mapCols) {
 		List<Skeleton> reachedEnd = new ArrayList<>();
 		for (Skeleton s : enemyList) {
@@ -84,7 +90,7 @@ public abstract class Skeleton extends Entity{
 	}
 	
 	// Moves the skeleton's image to the correct pixel position on screen.
-    // Because progress is a decimal the skeleton sits between two path nodes and blends between them
+    // Progress is a decimal so the skeleton sits between two path nodes and blends between them
     public void updatePosition(List<Node> path, GridPane gameGrid, int mapCols) {
 
         // Figure out which two path nodes the skeleton is between
@@ -99,13 +105,14 @@ public abstract class Skeleton extends Entity{
 
         // Blend between the two nodes to get a smooth in-between position
         Node currentNode = path.get(currentNodeIndex);
-        Node nextNode    = path.get(currentNodeIndex + 1);
+        Node nextNode = path.get(currentNodeIndex + 1);
 
-        // Interpolate: start at currentNode and move blendFactor of the way toward nextNode.
-        // Note: getY() = column
+        // Interpolate: start at currentNode and move blendFactor of the way toward nextNode
+        
+        // getY() = column
         double blendedColumn = currentNode.getY() + blendFactor * (nextNode.getY() - currentNode.getY());
         // getX() = row
-        double blendedRow    = currentNode.getX() + blendFactor * (nextNode.getX() - currentNode.getX());
+        double blendedRow = currentNode.getX() + blendFactor * (nextNode.getX() - currentNode.getX());
 
         // Convert the grid position to pixels on screen
 
@@ -130,7 +137,7 @@ public abstract class Skeleton extends Entity{
     public boolean hasReachedEnd(List<Node> path) {
         return progress >= path.size() - 1;
     }
-    // Removes this skeleton's sprite from the map pane and from the shared enemy list
+    // Removes this skeleton's sprite from the map pane and the shared enemy list
     public void removeFromScene(Pane gameMapPane) {
         gameMapPane.getChildren().remove(sprite);
         Skeleton.enemyList.remove(this);
