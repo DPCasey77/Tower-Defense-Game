@@ -286,7 +286,81 @@ public class LevelOneController {
         bones -= pendingTower.getCost();
         bonesTextbox.setText(String.format("%.0f", bones));
 
+        // Update routing now that this cell is blocked
+        repathAfterTowerPlaced(row, col);
+
         cancelPlacementMode();
+    }
+
+    // Returns a copy of MAP with every cell that holds a placed tower marked as a wall.
+    // Used as the navmesh for any re-pathfinding triggered by tower placement.
+    private int[][] buildMapWithTowers() {
+        int[][] mapWithTowers = new int[MAP_ROWS][MAP_COLS];
+        for (int r = 0; r < MAP_ROWS; r++) {
+            for (int c = 0; c < MAP_COLS; c++) {
+                mapWithTowers[r][c] = (placedTowers[r][c] != null) ? 1 : MAP[r][c];
+            }
+        }
+        return mapWithTowers;
+    }
+
+    // After a tower is placed at the default path is rebuilt
+    // Any active skeleton with a route through the tower is redirected
+    private void repathAfterTowerPlaced(int towerRow, int towerCol) {
+        int[][] mapWithTowers = buildMapWithTowers();
+
+        // Refresh the default path used by future spawns so they avoid every placed tower
+        List<Node> newDefaultPath = computePath(mapWithTowers, 0, 0);
+        if (newDefaultPath != null) {
+            path = newDefaultPath;
+        }
+
+        // Re-route any active skeleton whose remaining path passes through this cell
+        for (Skeleton s : Skeleton.enemyList) {
+            List<Node> currentPath = s.getPath();
+            if (currentPath == null) continue;
+
+            int currentNodeIndex = (int) s.getProgress();
+            // Cap to the last walkable index in the path
+            currentNodeIndex = Math.min(currentNodeIndex, currentPath.size() - 1);
+
+            // Search for the tower in the remaining portion of this skeleton's path.
+            // If not there, this skeleton is unaffected
+            boolean towerInRemainingPath = false;
+            for (int i = currentNodeIndex; i < currentPath.size(); i++) {
+                Node n = currentPath.get(i);
+                if (n.getX() == towerRow && n.getY() == towerCol) {
+                    towerInRemainingPath = true;
+                    break;
+                }
+            }
+            if (!towerInRemainingPath) continue;
+
+            // Re-pathfind from the skeleton's current node to the end of the map
+            // If the current node itself is now blocked, skip the re-route
+            Node currentNode = currentPath.get(currentNodeIndex);
+            if (mapWithTowers[currentNode.getX()][currentNode.getY()] == 1) continue;
+
+            List<Node> newPath = computePath(mapWithTowers, currentNode.getX(), currentNode.getY());
+            if (newPath == null) continue;
+
+            s.setPath(newPath);
+            // Drop the integer portion of progress so the fractional interpolation between
+            // the current node and the new next node carries over smoothly.
+            s.setProgress(s.getProgress() - currentNodeIndex);
+        }
+    }
+
+    // Runs PathFinder from (startRow, startCol) to the bottom-right end cell
+    // Returns null if no route exists
+    private List<Node> computePath(int[][] map, int startRow, int startCol) {
+        try {
+            PathFinder pf = new PathFinder(MAP_COLS, MAP_ROWS, map, startRow, startCol,
+                                            MAP_COLS - 1, MAP_ROWS - 1);
+            return pf.getOrderedPath();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // Adds a circle range indicator centered on the given tower
@@ -397,9 +471,9 @@ public class LevelOneController {
 
         // Reposition all active skeletons whenever the pane is resized
         gameMapPane.widthProperty().addListener((obs, old, newVal) ->
-            activeSkeletons.forEach(s -> s.updatePosition(path, gameGrid, MAP_COLS)));
+            activeSkeletons.forEach(s -> s.updatePosition(gameGrid, MAP_COLS)));
         gameMapPane.heightProperty().addListener((obs, old, newVal) ->
-            activeSkeletons.forEach(s -> s.updatePosition(path, gameGrid, MAP_COLS)));
+            activeSkeletons.forEach(s -> s.updatePosition(gameGrid, MAP_COLS)));
 
         // Register the Escape key to cancel placement mode.
         // Wait until the scene is attached because the scene is not yet
@@ -420,8 +494,11 @@ public class LevelOneController {
         SkeletonEnemy skeleton = new SkeletonEnemy(0, 0);
         gameMapPane.getChildren().add(skeleton.getSprite());
 
+        // Each skeleton gets its own copy of the current path so re-routes affect only this one
+        skeleton.setPath(new ArrayList<>(path));
+
         activeSkeletons.add(skeleton);
-        skeleton.updatePosition(path, gameGrid, MAP_COLS);
+        skeleton.updatePosition(gameGrid, MAP_COLS);
     }
 
     // Initializes resources and starts the game
@@ -484,7 +561,7 @@ public class LevelOneController {
 
         // Advance every skeleton
         // escapeSkeleton handles cleanup and life deduction for those that finish
-        Skeleton.updateAll(delta, path, gameGrid, MAP_COLS).forEach(this::escapeSkeleton);
+        Skeleton.updateAll(delta, gameGrid, MAP_COLS).forEach(this::escapeSkeleton);
     }
 
     // Called when a skeleton is destroyed by a tower

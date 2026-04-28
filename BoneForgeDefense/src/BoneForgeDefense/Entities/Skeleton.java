@@ -11,14 +11,17 @@ public abstract class Skeleton extends Entity{
 	protected double health;
 	protected double moveSpeed;
 	protected double boneReward;
-	
+
 	//stat modifiers for effects such as slow towers
 	private double moveSpeedMod = 1.0;
 	private double healthMod = 1.0;
 	private double boneRewardMod = 1.0;
-	
+
 	private double progress = 0.0;
-	
+
+	// Unique path for each skeleton
+	protected List<Node> path;
+
 	public static List<Skeleton> enemyList = new ArrayList<Skeleton>();
 	public Skeleton(double xPos, double yPos, String spritePath) {
 		super(xPos, yPos, spritePath);
@@ -73,25 +76,34 @@ public abstract class Skeleton extends Entity{
 		this.boneReward=mod;
 	}
 
-	// Advances every active skeleton along the path and returns a list of skeletons that have reached the end
-	public static List<Skeleton> updateAll(double delta, List<Node> path, GridPane gameGrid, int mapCols) {
+	// Advances every active skeleton along its own path and returns a list of skeletons that have reached the end
+	public static List<Skeleton> updateAll(double delta, GridPane gameGrid, int mapCols) {
 		List<Skeleton> reachedEnd = new ArrayList<>();
 		for (Skeleton s : enemyList) {
-			
+
 			s.advance(delta);
-			if (s.hasReachedEnd(path)) {
+			if (s.hasReachedEnd()) {
 				reachedEnd.add(s);
 				continue;
 			}
-			s.updatePosition(path, gameGrid, mapCols);
-			
+			s.updatePosition(gameGrid, mapCols);
+
 		}
 		return reachedEnd;
 	}
-	
-	// Moves the skeleton's image to the correct pixel position on screen.
+
+	public List<Node> getPath() {
+		return path;
+	}
+
+	// Replaces this skeleton's path at spawn and when a tower is placed
+	public void setPath(List<Node> path) {
+		this.path = path;
+	}
+
+	// Moves the skeleton's image to the correct position on screen.
     // Progress is a decimal so the skeleton sits between two path nodes and blends between them
-    public void updatePosition(List<Node> path, GridPane gameGrid, int mapCols) {
+    public void updatePosition(GridPane gameGrid, int mapCols) {
 
         // Figure out which two path nodes the skeleton is between
         // The whole number part of progress is the index of the node the skeleton just passed
@@ -133,8 +145,8 @@ public abstract class Skeleton extends Entity{
     public void advance(double delta) {
         progress += delta * this.getSpeed();
     }
-    // Returns true when the skeleton has reached the end node of the path
-    public boolean hasReachedEnd(List<Node> path) {
+    // Returns true when the skeleton has reached the end node of its path
+    public boolean hasReachedEnd() {
         return progress >= path.size() - 1;
     }
     // Removes this skeleton's sprite from the map pane and the shared enemy list
