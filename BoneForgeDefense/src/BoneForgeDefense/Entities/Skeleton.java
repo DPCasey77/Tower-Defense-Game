@@ -87,10 +87,13 @@ public abstract class Skeleton extends Entity{
 				continue;
 			}
 			s.updatePosition(gameGrid, mapCols);
+			s.update(delta);
 
 		}
 		return reachedEnd;
 	}
+
+	protected abstract void update(double delta);
 
 	public List<Node> getPath() {
 		return path;

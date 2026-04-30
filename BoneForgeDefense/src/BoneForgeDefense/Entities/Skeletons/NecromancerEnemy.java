@@ -4,21 +4,31 @@ import BoneForgeDefense.Entities.Skeleton;
 import BoneForgeDefense.Scenes.LevelOneController;
 
 public class NecromancerEnemy extends Skeleton{
-	private double castTime = 10.0;
+	private double castTimeCoolDown = 10.0*60;
+	private double castTimer = 2.0*60;
+	private double castTimeCounter = 0;
+	private double coolDown = 0;
 	private double castRange = 5;
+	private boolean isCasting = false;
 	private static String spritePath = "/BoneForgeDefense/Sprites/necromancer.png";
+	private double defualtMoveSpeed = 0.5;
 	
 	public NecromancerEnemy(double xPos, double yPos) {
 		super(xPos, yPos, spritePath);
 		health = 500;
-		moveSpeed=0.5;
+		moveSpeed=defualtMoveSpeed;
 		boneReward=100;
 		
 	}
 
 	
-	public void castRessurrect() {
-
+	public void castRessurrect(int enemiesToSpawn, double delta) {
+		castTimeCounter++;
+		if (castTimeCounter==castTimer) {
+			for(int i=0;i<enemiesToSpawn;i++) {
+				SkeletonEnemy spawnedSkeleton = new SkeletonEnemy(this.xPos,this.yPos);
+			}	
+		}
 	}
 	
 	private double getBonesInRange(){
@@ -50,6 +60,34 @@ public class NecromancerEnemy extends Skeleton{
 			}
 		}
 		return bonesInRange;
+	}
+
+
+	@Override
+	protected void update(double delta) {
+		canCast(delta);
+		if(isCasting) {
+			moveSpeed=0;
+		}
+		else {
+			moveSpeed=defualtMoveSpeed;
+		}
+		
+	}
+
+
+	private void canCast(double delta) {
+		if (coolDown<=0) {
+			int enemiesToSpawn = (int)getBonesInRange()%100;
+			if(enemiesToSpawn>=1) {
+				isCasting=true;
+				castRessurrect(enemiesToSpawn,delta);
+				coolDown=castTimeCoolDown;
+			}
+		}
+		else {
+			coolDown--;
+		}
 	}
 
 }

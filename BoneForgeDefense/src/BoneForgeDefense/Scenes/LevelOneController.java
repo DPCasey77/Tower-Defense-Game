@@ -28,6 +28,7 @@ import BoneForgeDefense.PathFinder;
 import BoneForgeDefense.Entities.Skeleton;
 import BoneForgeDefense.Entities.Tower;
 import BoneForgeDefense.Entities.Projectile;
+import BoneForgeDefense.Entities.Skeletons.NecromancerEnemy;
 import BoneForgeDefense.Entities.Skeletons.SkeletonEnemy;
 import BoneForgeDefense.Entities.OffensiveTowers.BoneBusterTower;
 import BoneForgeDefense.Entities.OffensiveTowers.OffensiveTower;
@@ -490,15 +491,24 @@ public class LevelOneController {
     }
 
     // Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
-    private void spawnSkeleton() {
-        SkeletonEnemy skeleton = new SkeletonEnemy(0, 0);
-        gameMapPane.getChildren().add(skeleton.getSprite());
+    private void spawnSkeleton(int type) {
+    	Skeleton spawnSkeleton;
+    	switch(type){
+    	case 2:
+    		spawnSkeleton = new NecromancerEnemy(0, 0);
+    		break;
+    	default:
+    		spawnSkeleton  = new SkeletonEnemy(0, 0);
+    		break;
+    	}
+        
+        gameMapPane.getChildren().add(spawnSkeleton.getSprite());
 
         // Each skeleton gets its own copy of the current path so re-routes affect only this one
-        skeleton.setPath(new ArrayList<>(path));
+        spawnSkeleton.setPath(new ArrayList<>(path));
 
-        activeSkeletons.add(skeleton);
-        skeleton.updatePosition(gameGrid, MAP_COLS);
+        activeSkeletons.add(spawnSkeleton);
+        spawnSkeleton.updatePosition(gameGrid, MAP_COLS);
     }
 
     // Initializes resources and starts the game
@@ -591,7 +601,7 @@ public class LevelOneController {
             spawnAccumulator = 0;
             // Pick a new random delay for the next spawn
             nextSpawnTime = SPAWN_INTERVAL_MIN + random.nextDouble() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
-            spawnSkeleton();
+            spawnSkeleton(0);
         }
     }
 

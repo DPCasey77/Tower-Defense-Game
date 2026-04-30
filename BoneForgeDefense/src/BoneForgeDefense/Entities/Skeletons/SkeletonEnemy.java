@@ -28,5 +28,11 @@ public class SkeletonEnemy extends Skeleton {
         StackPane.setAlignment(sprite, Pos.TOP_LEFT);
     }
 
+	@Override
+	protected void update(double delta) {
+		// TODO Auto-generated method stub
+		
+	}
+
 
 }
