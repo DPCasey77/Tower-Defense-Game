@@ -143,6 +143,8 @@ public abstract class Skeleton extends Entity{
         sprite.setFitHeight(cellSizePixels);
         sprite.setTranslateX(gridStartX + blendedColumn * cellSizePixels);
         sprite.setTranslateY(gridStartY + blendedRow    * cellSizePixels);
+        xPos = currentNode.getX();
+		yPos = currentNode.getY();
     }
     // Advances progress along the path by delta seconds
     public void advance(double delta) {
