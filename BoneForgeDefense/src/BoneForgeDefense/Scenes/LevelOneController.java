@@ -491,7 +491,7 @@ public class LevelOneController {
     }
 
     // Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
-    private void spawnSkeleton(int type) {
+    public void spawnSkeleton(int type) {
     	Skeleton spawnSkeleton;
     	switch(type){
     	case 2:
@@ -578,11 +578,15 @@ public class LevelOneController {
     // Awards bones and increments kill counter.
     private void killSkeleton(SkeletonEnemy skeleton) {
         skeleton.removeFromScene(gameMapPane);
-        activeSkeletons.remove(skeleton);
+        int xPos = (int) Math.floor(skeleton.getX());
+        int yPos = (int) Math.floor(skeleton.getY());
+        System.out.println("died at:" + xPos+" "+ yPos);
+        mapNodes[xPos][yPos].addBones(skeleton.getBoneReward());
         bones += skeleton.getBoneReward();
         bonesTextbox.setText(String.format("%.0f", bones));
         kills++;
         killsTextbox.setText(String.valueOf(kills));
+        activeSkeletons.remove(skeleton);
     }
 
     // Called when a skeleton reaches the path end

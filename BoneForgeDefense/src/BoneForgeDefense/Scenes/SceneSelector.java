@@ -15,7 +15,7 @@ public class SceneSelector extends Application{
 	private static Scene levelOneScene;
 	private static Scene settingsMenuScene;
 	
-	private static LevelOneController levelOneController;
+	public static LevelOneController levelOneController;
 	
 	@Override
 	public void start(Stage stage) throws Exception {

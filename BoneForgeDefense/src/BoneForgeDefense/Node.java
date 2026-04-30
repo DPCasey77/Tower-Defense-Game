@@ -33,7 +33,8 @@ public class Node {
 	public void setChecked() {checked=true;}
 	public void setParent(Node Parent) {parent = Parent;}
 	public void isPath() {isPath = true;}
-	
+	public void addBones(double add) {bones+=add;}
+	public void removeBones(double sub) {bones-=sub;}
 	
 	public int getX() {return this.X;}
 	public int getY() {return this.Y;}

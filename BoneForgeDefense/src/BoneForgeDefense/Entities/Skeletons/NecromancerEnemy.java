@@ -2,6 +2,7 @@ package BoneForgeDefense.Entities.Skeletons;
 
 import BoneForgeDefense.Entities.Skeleton;
 import BoneForgeDefense.Scenes.LevelOneController;
+import BoneForgeDefense.Scenes.SceneSelector;
 
 public class NecromancerEnemy extends Skeleton{
 	private double castTimeCoolDown = 10.0*60;
@@ -18,16 +19,15 @@ public class NecromancerEnemy extends Skeleton{
 		health = 500;
 		moveSpeed=defualtMoveSpeed;
 		boneReward=100;
-		
 	}
-
 	
 	public void castRessurrect(int enemiesToSpawn, double delta) {
 		castTimeCounter++;
-		if (castTimeCounter==castTimer) {
+		if (castTimeCounter>=castTimer) {
 			for(int i=0;i<enemiesToSpawn;i++) {
-				SkeletonEnemy spawnedSkeleton = new SkeletonEnemy(this.xPos,this.yPos);
-			}	
+				SceneSelector.levelOneController.spawnSkeleton(0);
+			}
+			isCasting=false;
 		}
 	}
 	
@@ -51,7 +51,6 @@ public class NecromancerEnemy extends Skeleton{
 			maxY = (int) Math.floor(this.yPos + castRange);
 		}
 		
-		
 		for(int i = minY; i<=maxY; i++) {
 			for(int j = minX; j<=maxX; j++) {
 				if (LevelOneController.mapNodes[i][j].getRange(this.xPos,this.yPos)<=(this.castRange*this.castRange)) {
@@ -61,7 +60,6 @@ public class NecromancerEnemy extends Skeleton{
 		}
 		return bonesInRange;
 	}
-
 
 	@Override
 	protected void update(double delta) {
@@ -74,7 +72,6 @@ public class NecromancerEnemy extends Skeleton{
 		}
 		
 	}
-
 
 	private void canCast(double delta) {
 		if (coolDown<=0) {
