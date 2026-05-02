@@ -6,7 +6,6 @@ import java.util.function.Consumer;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import BoneForgeDefense.Entities.Skeletons.SkeletonEnemy;
 
 public class Projectile {
 
@@ -15,13 +14,13 @@ public class Projectile {
 
     private double x;
     private double y;
-    private final SkeletonEnemy target;
+    private final Skeleton target;
     private final double speed;     // pixels per second
     private final double damage;    // health subtracted from the target on hit
     private final Circle shape;     // JavaFX Circle used to draw the projectile
 
     public Projectile(double startX, double startY,
-                      SkeletonEnemy target, double speed, double damage) {
+                      Skeleton target, double speed, double damage) {
         this.x      = startX;
         this.y      = startY;
         this.target = target;
@@ -68,7 +67,7 @@ public class Projectile {
         return !Skeleton.enemyList.contains(target);
     }
 
-    public SkeletonEnemy getTarget()  { return target; }
+    public Skeleton getTarget()  { return target; }
     public double        getDamage()  { return damage; }
 
     // The JavaFX circle shape
@@ -79,7 +78,7 @@ public class Projectile {
     // can handle scene and list cleanup without Projectile needing a Pane reference.
     // Returns the list of spent projectiles for the caller to remove from the scene.
     public static List<Projectile> updateAll(double delta, List<Projectile> activeProjectiles,
-                                             Consumer<SkeletonEnemy> onKilled) {
+                                             Consumer<Skeleton> onKilled) {
         List<Projectile> spent = new ArrayList<>();
 
         for (Projectile proj : activeProjectiles) {
@@ -92,7 +91,7 @@ public class Projectile {
             proj.moveTowardsTarget(delta);
 
             if (proj.hasHitTarget()) {
-                SkeletonEnemy target = proj.getTarget();
+                Skeleton target = proj.getTarget();
                 target.setHealth(target.getHealth() - proj.getDamage());
 
                 // Kill the skeleton when it runs out of health

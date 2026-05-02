@@ -18,21 +18,7 @@ public class PathFinder {
 	Node startNode;
 	Node endNode;
 	
-	
-	//Map key
-	/* 0 empty
-	 * 1 wall
-	 * 2 start
-	 * 3 end
-	 * 
-	 * example:
-	 * 20000000010
-	 * 11111000011
-	 * 00000000000
-	 * 00100011111
-	 * 00000000003
-	 * 
-	 */
+
 	public PathFinder(int Cols, int Rows, int[][] map, int startX, int startY, int endX, int endY) {
 		this.cols = Cols;
 		this.rows = Rows;
@@ -49,16 +35,6 @@ public class PathFinder {
 			}
 		}
 		
-		
-		//debug show node positions
-		/*
-		for(int i = 0; i<rows; i++) {
-			for(int j = 0; j<cols; j++) {
-				System.out.print(node[i][j].getX() + "," + node[i][j].getY() + "  ");
-			}
-			System.out.print("\n");
-		}
-		*/
 		search(startX, startY, endX, endY);
 	}
 	
@@ -106,11 +82,6 @@ public class PathFinder {
 		
 		while(goalReached == false && step < maxSteps) {
 			step++;
-			
-			//debug
-			//System.out.println("step: " + step);
-			//System.out.println(currentNode.getX() + " " + currentNode.getY());
-			
 			int col = currentNode.getY();
 			int row = currentNode.getX();
 			
@@ -146,39 +117,7 @@ public class PathFinder {
 			if(openList.isEmpty()) {
 				return false;
 			}
-			
-			
-			/*for (int i=0; i < openList.size();i++) {
-				
-				//debug code
-				//System.out.println(openList.get(i).getX() + " " + openList.get(i).getY());
-				//System.out.println("openList "+ i + "\n\ttcost:" + openList.get(i).tCost + "\n\tscost:" + openList.get(i).sCost + "\n\tecost:" + openList.get(i).eCost);
-				
-				if(openList.get(i).tCost < bestNodeCost) {
-					bestNodeIndex=i;
-					bestNodeCost = openList.get(i).tCost;
-				}
-			
-				else if(openList.get(i).tCost == bestNodeCost) {
-					if(bestNodeIndex > openList.size() - 1) {
-						bestNodeIndex = 0;
-					}
-					if(openList.get(i).eCost < openList.get(bestNodeIndex).eCost){
-						bestNodeIndex=i;
-						bestNodeCost = openList.get(i).tCost;
-					}
-				}
-			}*/
-			
-			//Node minNode = Collections.min(openList,Comparator.comparingDouble(Node::getTCost));
-			//bestNodeIndex = openList.indexOf(minNode);
-			//debug code
-			
-			//System.out.println(openList.get(bestNodeIndex).getX() + " " + openList.get(bestNodeIndex).getY());
-			//System.out.println("Open list size: " + openList.size());
-			//System.out.println("Best Index: " + bestNodeIndex);
-			
-			//currentNode = openList.get(bestNodeIndex);
+
 			currentNode = Collections.min(openList,Comparator.comparingDouble(Node::getTCost));
 			
 			if(currentNode == endNode) {
@@ -201,7 +140,7 @@ public class PathFinder {
 	}
 	
 	public void openNode(Node node) {
-		if (node.getOpen()==false && node.getChecked()==false && node.getWall()==false) {
+		if (node.getOpen()==false && node.getChecked()==false && (node.getWall()==false || node.getBones()>=100)) {
 			node.setIsOpen();
 			node.setParent(currentNode);
 			node.tCost(startNode,endNode);
@@ -209,16 +148,8 @@ public class PathFinder {
 			
 			//System.out.println("\t opened");
 		}
-		/*else if(node.getWall()){
-			System.out.println("\t not opened is wall");
-		}
-		else if(node.getChecked()){
-			System.out.println("\t not opened is checked");
-		}
-		else if(node.getOpen()){
-			System.out.println("\t not opened is open");
-		}*/
 	}
+	
 	public Node[][] getNodes() {
 		return node;
 	}
@@ -246,6 +177,7 @@ public class PathFinder {
 		currentNode = startNode;
 		openNode(node[x][y]);
 	}
+	
 	private void setEndNode(int x, int y) {
 		node[x][y].setIsEnd();
 		endNode = node[x][y];

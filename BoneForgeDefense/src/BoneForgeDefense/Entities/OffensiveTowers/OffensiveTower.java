@@ -2,7 +2,6 @@ package BoneForgeDefense.Entities.OffensiveTowers;
 
 import BoneForgeDefense.Entities.Projectile;
 import BoneForgeDefense.Entities.Skeleton;
-import BoneForgeDefense.Entities.Skeletons.SkeletonEnemy;
 import BoneForgeDefense.Entities.Tower;
 
 
@@ -43,7 +42,7 @@ public abstract class OffensiveTower extends Tower{
 	public abstract int getTarget(double towerPixelX, double towerPixelY);
 
 	// Speed of projectiles fired by this tower, in pixels per second
-	private static final double PROJECTILE_SPEED = 200.0;
+	private static final double PROJECTILE_SPEED = 400.0;
 
 	// Advances the fire timer, selects a target, and returns a Projectile ready to
 	// be added to the scene, or null if the tower is cooling down or out of range.
@@ -58,7 +57,7 @@ public abstract class OffensiveTower extends Tower{
 		shoot();
 
 		// Resolve the index to the actual skeleton and create the projectile
-		SkeletonEnemy target = (SkeletonEnemy) Skeleton.enemyList.get(targetIndex);
+		Skeleton target = (Skeleton) Skeleton.enemyList.get(targetIndex);
 		return new Projectile(towerPixelX, towerPixelY, target, PROJECTILE_SPEED, damage);
 	}
 

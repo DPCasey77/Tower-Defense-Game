@@ -1,23 +1,30 @@
 package BoneForgeDefense.Entities;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import BoneForgeDefense.Node;
+import BoneForgeDefense.Scenes.LevelOneController;
+import BoneForgeDefense.Scenes.SceneSelector;
 
 public abstract class Skeleton extends Entity{
 	protected double health;
 	protected double moveSpeed;
 	protected double boneReward;
+	private boolean dead = false;
+    
+    public void setDead() { this.dead = true; }
+    public boolean isDead() { return dead; }
 
 	//stat modifiers for effects such as slow towers
 	private double moveSpeedMod = 1.0;
 	private double healthMod = 1.0;
 	private double boneRewardMod = 1.0;
 
-	private double progress = 0.0;
+	public double progress = 0.0;
 
 	// Unique path for each skeleton
 	protected List<Node> path;
@@ -77,21 +84,26 @@ public abstract class Skeleton extends Entity{
 	}
 
 	// Advances every active skeleton along its own path and returns a list of skeletons that have reached the end
-	public static List<Skeleton> updateAll(double delta, GridPane gameGrid, int mapCols) {
-		List<Skeleton> reachedEnd = new ArrayList<>();
-		for (Skeleton s : enemyList) {
+	public static List<Skeleton> updateAll(List<Skeleton> enemyList, double delta, GridPane gameGrid, int mapCols) {
+	    List<Skeleton> reachedEnd = new ArrayList<>();
 
-			s.advance(delta);
-			if (s.hasReachedEnd()) {
-				reachedEnd.add(s);
-				continue;
-			}
-			s.updatePosition(gameGrid, mapCols);
-			s.update(delta);
+	    // This loop will no longer crash when killSkeleton() is called
+	    for (Skeleton s : enemyList) {
+	        s.advance(delta);
 
-		}
-		return reachedEnd;
+	        if (s.hasReachedEnd()) {
+	            reachedEnd.add(s);
+	            enemyList.remove(s); // Safe with CopyOnWriteArrayList
+	            continue;
+	        }
+
+	        s.updatePosition(gameGrid, mapCols);
+	        s.update(delta);
+	    }
+	    
+	    return reachedEnd;
 	}
+
 
 	protected abstract void update(double delta);
 
@@ -125,9 +137,9 @@ public abstract class Skeleton extends Entity{
         // Interpolate: start at currentNode and move blendFactor of the way toward nextNode
         
         // getY() = column
-        double blendedColumn = currentNode.getY() + blendFactor * (nextNode.getY() - currentNode.getY());
+        yPos = currentNode.getY() + blendFactor * (nextNode.getY() - currentNode.getY());
         // getX() = row
-        double blendedRow = currentNode.getX() + blendFactor * (nextNode.getX() - currentNode.getX());
+        xPos = currentNode.getX() + blendFactor * (nextNode.getX() - currentNode.getX());
 
         // Convert the grid position to pixels on screen
 
@@ -141,10 +153,9 @@ public abstract class Skeleton extends Entity{
         // Resize the skeleton image to match one cell, then place it at the right spot
         sprite.setFitWidth(cellSizePixels);
         sprite.setFitHeight(cellSizePixels);
-        sprite.setTranslateX(gridStartX + blendedColumn * cellSizePixels);
-        sprite.setTranslateY(gridStartY + blendedRow    * cellSizePixels);
-        xPos = currentNode.getX();
-		yPos = currentNode.getY();
+        sprite.setTranslateX(gridStartX + yPos * cellSizePixels);
+        sprite.setTranslateY(gridStartY + xPos    * cellSizePixels);
+
     }
     // Advances progress along the path by delta seconds
     public void advance(double delta) {

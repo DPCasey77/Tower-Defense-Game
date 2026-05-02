@@ -3,6 +3,9 @@ package BoneForgeDefense.Entities.Skeletons;
 import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
 
+import java.util.List;
+
+import BoneForgeDefense.Node;
 import BoneForgeDefense.Entities.Skeleton;
 
 public class SkeletonEnemy extends Skeleton {
@@ -20,7 +23,7 @@ public class SkeletonEnemy extends Skeleton {
         // Rate at which progress advances along the path (cells per second)
 		moveSpeed=1.0;
 		// Bones awarded to the player for killing this enemy type
-		boneReward=10;
+		boneReward=100;
 
         // Configure the sprite inherited from Entity for overlay display
         sprite.setPreserveRatio(false);
@@ -32,6 +35,12 @@ public class SkeletonEnemy extends Skeleton {
 	protected void update(double delta) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public List<Node> getPath() {
+		// TODO Auto-generated method stub
+		return path;
 	}
 
 

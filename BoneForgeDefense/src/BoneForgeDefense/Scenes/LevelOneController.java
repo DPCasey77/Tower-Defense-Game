@@ -21,6 +21,7 @@ import javafx.animation.AnimationTimer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 import BoneForgeDefense.Node;
@@ -30,6 +31,7 @@ import BoneForgeDefense.Entities.Tower;
 import BoneForgeDefense.Entities.Projectile;
 import BoneForgeDefense.Entities.Skeletons.NecromancerEnemy;
 import BoneForgeDefense.Entities.Skeletons.SkeletonEnemy;
+import BoneForgeDefense.Entities.Skeletons.TankEnemy;
 import BoneForgeDefense.Entities.OffensiveTowers.BoneBusterTower;
 import BoneForgeDefense.Entities.OffensiveTowers.OffensiveTower;
 import BoneForgeDefense.Entities.DefensiveTowers.ShieldTower;
@@ -51,8 +53,8 @@ public class LevelOneController {
     private static final int STARTING_LIVES = 20;
 
     // Seconds between each skeleton spawn (chosen randomly within this range)
-    private static final double SPAWN_INTERVAL_MIN = 3.0;
-    private static final double SPAWN_INTERVAL_MAX = 8.0;
+    private static final double SPAWN_INTERVAL_MIN = 1.0;
+    private static final double SPAWN_INTERVAL_MAX = 2.0;
 
     // Map / grid variables
     private List<Node> path = new ArrayList<>();   // ordered list of nodes from start to end
@@ -61,7 +63,7 @@ public class LevelOneController {
     private GridPane gameGrid;
 
     // Skeleton tracking variables
-    private final List<Skeleton> activeSkeletons  = new ArrayList<>();
+    private List<Skeleton> activeSkeletons = new CopyOnWriteArrayList<>();
 
     // Projectile tracking variables
     private final List<Projectile> activeProjectiles = new ArrayList<>();
@@ -404,8 +406,9 @@ public class LevelOneController {
     // Returns the CSS background color for a cell based on its node type
     private String getCellStyle(Node node) {
         if (node.getStart()) return "-fx-background-color: #2EA832;";
-        if (node.getEnd())   return "-fx-background-color: #C43030;";
-        if (node.getWall())  return "-fx-background-color: #555555;";
+        else if (node.getEnd())   return "-fx-background-color: #C43030;";
+        else if (node.getWall())  return "-fx-background-color: #555555;";
+        if(node.getBones()>=100) return "-fx-background-color: #D40202";
         return "-fx-background-color: #6B8C52;";
     }
 
@@ -494,11 +497,17 @@ public class LevelOneController {
     public void spawnSkeleton(int type) {
     	Skeleton spawnSkeleton;
     	switch(type){
+    	case 0:
+    		spawnSkeleton = new SkeletonEnemy(0, 0);
+    		break;
+    	case 1:
+    		spawnSkeleton = new SkeletonEnemy(0, 0);
+    		break;
     	case 2:
     		spawnSkeleton = new NecromancerEnemy(0, 0);
     		break;
     	default:
-    		spawnSkeleton  = new SkeletonEnemy(0, 0);
+    		spawnSkeleton  = new TankEnemy(0, 0);
     		break;
     	}
         
@@ -527,6 +536,8 @@ public class LevelOneController {
     // Delegates each frame to all game subsystems
     private void update(double delta) {
         updateSpawner(delta);
+        // Inside your controller's update method
+        List<Skeleton> skeletonsToCleanup = Skeleton.updateAll(activeSkeletons, delta, gameGrid, MAP_COLS);
 
         // Reset every skeleton's speed mod so slow towers can re-apply their effect this frame
         Skeleton.resetSpeedMods();
@@ -571,22 +582,23 @@ public class LevelOneController {
 
         // Advance every skeleton
         // escapeSkeleton handles cleanup and life deduction for those that finish
-        Skeleton.updateAll(delta, gameGrid, MAP_COLS).forEach(this::escapeSkeleton);
+        Skeleton.updateAll(skeletonsToCleanup, delta, gameGrid, MAP_COLS).forEach(this::escapeSkeleton);
     }
 
     // Called when a skeleton is destroyed by a tower
     // Awards bones and increments kill counter.
-    private void killSkeleton(SkeletonEnemy skeleton) {
-        skeleton.removeFromScene(gameMapPane);
+    private void killSkeleton(Skeleton skeleton) {
         int xPos = (int) Math.floor(skeleton.getX());
         int yPos = (int) Math.floor(skeleton.getY());
-        System.out.println("died at:" + xPos+" "+ yPos);
-        mapNodes[xPos][yPos].addBones(skeleton.getBoneReward());
+        
+        mapNodes[yPos][xPos].addBones(skeleton.getBoneReward());
+        System.out.println("died at:" + xPos+" "+ yPos + "Bones here:" + mapNodes[yPos][xPos].getBones());
         bones += skeleton.getBoneReward();
         bonesTextbox.setText(String.format("%.0f", bones));
         kills++;
         killsTextbox.setText(String.valueOf(kills));
-        activeSkeletons.remove(skeleton);
+        skeleton.removeFromScene(gameMapPane);
+        activeSkeletons.remove(skeleton); 
     }
 
     // Called when a skeleton reaches the path end
@@ -605,7 +617,8 @@ public class LevelOneController {
             spawnAccumulator = 0;
             // Pick a new random delay for the next spawn
             nextSpawnTime = SPAWN_INTERVAL_MIN + random.nextDouble() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
-            spawnSkeleton(0);
+            Random random = new Random();
+            spawnSkeleton(random.nextInt(3));
         }
     }
 
