@@ -401,13 +401,17 @@ public class LevelOneController {
         mapNodes = pathFinder.getNodes();
         path = pathFinder.getOrderedPath();
 
-        // Constrain the grid to a square so cells are always square
+        // Size the grid so cells stay square regardless of the map's aspect ratio.
+        // Find the largest cell size that fits in the pane, then scale width/height by cell count.
         GridPane grid = new GridPane();
         gameGrid = grid;
-        staticGameGrid = grid; 
-        var squareSize = Bindings.min(gameMapPane.widthProperty(), gameMapPane.heightProperty());
-        grid.maxWidthProperty().bind(squareSize);
-        grid.maxHeightProperty().bind(squareSize);
+        staticGameGrid = grid;
+        var cellSize = Bindings.min(
+            gameMapPane.widthProperty().divide(MAP_COLS),
+            gameMapPane.heightProperty().divide(MAP_ROWS)
+        );
+        grid.maxWidthProperty().bind(cellSize.multiply(MAP_COLS));
+        grid.maxHeightProperty().bind(cellSize.multiply(MAP_ROWS));
 
         // Divide the grid evenly across all columns and rows using percentage constraints
         for (int col = 0; col < MAP_COLS; col++) {
@@ -636,8 +640,8 @@ public class LevelOneController {
                 activeProjectiles.remove(p);
             });
 
-        // Advance every skeleton
-        Skeleton.updateAll(skeletonsToCleanup, delta, gameGrid, MAP_COLS).forEach(this::escapeSkeleton);
+        // These skeletons already reached the end during this frame's updateAll pass — clean them up
+        skeletonsToCleanup.forEach(this::escapeSkeleton);
     }
 
     // Award bones, increments the kill counter, and leave a bone at the tile

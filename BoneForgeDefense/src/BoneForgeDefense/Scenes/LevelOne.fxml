@@ -23,6 +23,11 @@
                   <Insets right="10.0" top="20.0" />
                </StackPane.margin>
             </Button>
+            <!-- Shows the selected tower name and cancel instructions while in placement mode; empty otherwise -->
+            <Label fx:id="placementStatusLabel" alignment="CENTER" prefWidth="170.0" style="-fx-text-fill: #CC7700; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 8 0 8;" wrapText="true" StackPane.alignment="TOP_RIGHT">
+               <StackPane.margin>
+                  <Insets right="5.0" top="80.0" />
+               </StackPane.margin></Label>
          </children></StackPane>
    </center>
    <bottom>
@@ -55,10 +60,6 @@
                </children>
             </GridPane>
          </left>
-         <right>
-            <!-- Shows the selected tower name and cancel instructions while in placement mode; empty otherwise -->
-            <Label fx:id="placementStatusLabel" alignment="CENTER" prefWidth="170.0" style="-fx-text-fill: #CC7700; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 8 0 8;" wrapText="true" BorderPane.alignment="CENTER" />
-         </right>
          <center>
             <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
               <tabs>
