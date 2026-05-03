@@ -17,7 +17,8 @@ public abstract class SupportTower  extends Tower{
 		return range;
 	}
 
-	// Applies this support tower's effect to in-range entities each frame
-	public abstract void update(double delta, double towerPixelX, double towerPixelY);
+	// Applies this support tower's effect to in-range entities each frame.
+	// Returns true if something changed that requires enemy paths to be recalculated.
+	public abstract boolean update(double delta, double towerPixelX, double towerPixelY);
 
 }
