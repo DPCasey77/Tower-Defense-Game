@@ -15,9 +15,15 @@ public abstract class Skeleton extends Entity{
 	protected double moveSpeed;
 	protected double boneReward;
 	private boolean dead = false;
-    
+
     public void setDead() { this.dead = true; }
     public boolean isDead() { return dead; }
+
+    // Tracks which node index the skeleton was at last frame
+    private int lastNodeIndex = -1;
+
+    public int  getLastNodeIndex()          { return lastNodeIndex; }
+    public void setLastNodeIndex(int index) { lastNodeIndex = index; }
 
 	//stat modifiers for effects such as slow towers
 	private double moveSpeedMod = 1.0;

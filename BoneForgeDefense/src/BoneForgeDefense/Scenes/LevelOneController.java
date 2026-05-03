@@ -36,6 +36,8 @@ import BoneForgeDefense.Entities.Skeletons.TankEnemy;
 import BoneForgeDefense.Entities.OffensiveTowers.BoneBusterTower;
 import BoneForgeDefense.Entities.OffensiveTowers.OffensiveTower;
 import BoneForgeDefense.Entities.DefensiveTowers.ShieldTower;
+import BoneForgeDefense.BonePile;
+import BoneForgeDefense.Entities.SupportTowers.BoneHarvesterTower;
 import BoneForgeDefense.Entities.SupportTowers.SlowTower;
 import BoneForgeDefense.Entities.SupportTowers.SupportTower;
 
@@ -63,13 +65,20 @@ public class LevelOneController {
     private Pane[][] gridCells = new Pane[MAP_ROWS][MAP_COLS]; // references to each visual grid cell
     private GridPane gameGrid;
 
+    // Start tile 2 and end tile 3 positions that read from the map at start
+    private int startRow, startCol, endRow, endCol;
+    private static GridPane staticGameGrid;
+
+    // Bone pile tracking
+    private BonePile[][] bonePiles = new BonePile[MAP_ROWS][MAP_COLS];
+
     // Skeleton tracking variables
     private List<Skeleton> activeSkeletons = new CopyOnWriteArrayList<>();
 
     // Projectile tracking variables
     private final List<Projectile> activeProjectiles = new ArrayList<>();
-    private double spawnAccumulator = 0;  // time elapsed since the last spawn
-    private double nextSpawnTime = 0;     // seconds until the next spawn (re-randomized after each spawn)
+    private double spawnAccumulator = 0;  
+    private double nextSpawnTime = 0;    
     private final Random random = new Random();
 
     // Tower placement variables
@@ -84,11 +93,15 @@ public class LevelOneController {
     // Range indicator drawn while the cursor is over a placed tower; null when nothing is hovered
     private Circle hoverRangeCircle = null;
 
+    // Reference to the running game loop so it can be stopped when a new game starts
+    private AnimationTimer gameLoop = null;
+
     // FXML bindings
     @FXML private Label bonesTextbox;
     @FXML private Label killsTextbox;
     @FXML private Label livesTextbox;
-    @FXML private Label placementStatusLabel; // shows instructions while in tower placement mode
+    // Shows instructions while in tower placement mode
+    @FXML private Label placementStatusLabel;
 
     @FXML private StackPane gameMapPane;
 
@@ -103,7 +116,7 @@ public class LevelOneController {
 
     // Starts the JavaFX AnimationTimer, which calls update() every frame
     public void startGameLoop() {
-        new AnimationTimer() {
+        gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
 
@@ -123,18 +136,26 @@ public class LevelOneController {
                 }
 
             }
-        }.start();
+        };
+        gameLoop.start();
     }
 
-    // Builds one shop card per tower and adds it to the correct tab container
-    // Each tower is paired with a Supplier so a new instance can be created when placed on the grid
+    // Builds one shop card per tower and adds it to the correct tab container.
+    // Containers are cleared first so restarting the game does not duplicate the cards.
+    // Each tower is paired with a Supplier so a new instance can be created when placed on the grid.
     private void loadTowerCards() {
+        offensiveTowerContainer.getChildren().clear();
+        defensiveTowerContainer.getChildren().clear();
+        supportTowerContainer.getChildren().clear();
+
         offensiveTowerContainer.getChildren().add(
             createTowerCard(new BoneBusterTower(0, 0), () -> new BoneBusterTower(0, 0)));
         defensiveTowerContainer.getChildren().add(
             createTowerCard(new ShieldTower(0, 0), () -> new ShieldTower(0, 0)));
         supportTowerContainer.getChildren().add(
             createTowerCard(new SlowTower(0, 0), () -> new SlowTower(0, 0)));
+        supportTowerContainer.getChildren().add(
+            createTowerCard(new BoneHarvesterTower(0, 0), () -> new BoneHarvesterTower(0, 0)));
     }
 
     // Tower card display constants
@@ -143,10 +164,9 @@ public class LevelOneController {
     private static final double SPRITE_WIDTH  = 64;
     private static final double SPRITE_HEIGHT = 64;
 
-    // Creates a VBox card showing the tower's sprite, name, and cost.
+   
     // Clicking the card enters placement mode for that tower type.
-    // The 'factory' parameter is a function that creates a brand-new tower
-    // instance when the player confirms placement on the grid.
+    // Factory parameter creates a new tower instance 
     private VBox createTowerCard(Tower tower, Supplier<Tower> factory) {
         ImageView sprite = new ImageView(tower.getSprite().getImage());
         sprite.setFitWidth(SPRITE_WIDTH);
@@ -155,6 +175,7 @@ public class LevelOneController {
         Label name = new Label(tower.getName());
         Label cost = new Label("Cost: " + tower.getCost());
 
+        // Creates a VBox card showing the tower's sprite, name, and cost
         VBox towerCard = new VBox(5, sprite, name, cost);
         towerCard.setAlignment(javafx.geometry.Pos.CENTER);
         towerCard.setPrefWidth(CARD_WIDTH);
@@ -244,8 +265,7 @@ public class LevelOneController {
         cancelPlacementMode();
     }
 
-    // Returns a copy of MAP with every cell that holds a placed tower marked as a wall.
-    // Used as the navmesh for any re-pathfinding triggered by tower placement.
+    // Returns a copy of MAP with every cell that holds a placed tower marked as a wall
     private int[][] buildMapWithTowers() {
         int[][] mapWithTowers = new int[MAP_ROWS][MAP_COLS];
         for (int r = 0; r < MAP_ROWS; r++) {
@@ -259,10 +279,10 @@ public class LevelOneController {
     // After a tower is placed at the default path is rebuilt
     // Any active skeleton with a route through the tower is redirected
     private void repathAfterTowerPlaced(int towerRow, int towerCol) {
-        int[][] mapWithTowers = buildMapWithTowers();
+        int[][] baseNavMesh = buildMapWithTowers();
 
         // Refresh the default path used by future spawns so they avoid every placed tower
-        List<Node> newDefaultPath = computePath(mapWithTowers, 0, 0);
+        List<Node> newDefaultPath = computePath(baseNavMesh, 0, 0);
         if (newDefaultPath != null) {
             path = newDefaultPath;
         }
@@ -276,8 +296,7 @@ public class LevelOneController {
             // Cap to the last walkable index in the path
             currentNodeIndex = Math.min(currentNodeIndex, currentPath.size() - 1);
 
-            // Search for the tower in the remaining portion of this skeleton's path.
-            // If not there, this skeleton is unaffected
+            // Search for the tower in the remaining portion of this skeleton's path
             boolean towerInRemainingPath = false;
             for (int i = currentNodeIndex; i < currentPath.size(); i++) {
                 Node n = currentPath.get(i);
@@ -288,29 +307,34 @@ public class LevelOneController {
             }
             if (!towerInRemainingPath) continue;
 
-            // Re-pathfind from the skeleton's current node to the end of the map
-            // If the current node itself is now blocked, skip the re-route
             Node currentNode = currentPath.get(currentNodeIndex);
-            if (mapWithTowers[currentNode.getX()][currentNode.getY()] == 1) continue;
+            int row = currentNode.getX();
+            int col = currentNode.getY();
 
-            List<Node> newPath = computePath(mapWithTowers, currentNode.getX(), currentNode.getY());
+            // Build a navmesh for this specific skeleton.
+            // If it is standing on a max-capacity pile, adjacent walls are walkable for it.
+            int[][] navMesh = buildNavMeshForSkeleton(row, col);
+            
+            // Skip if Skeleton's current tile is blocked
+            if (navMesh[row][col] == 1) continue; 
+
+            List<Node> newPath = computePath(navMesh, row, col);
             if (newPath == null) continue;
 
             s.setPath(newPath);
-            // Drop the integer portion of progress so the fractional interpolation between
-            // the current node and the new next node carries over smoothly.
+            // Drop the integer portion of progress
             s.setProgress(s.getProgress() - currentNodeIndex);
         }
     }
 
-    // Runs PathFinder from (startRow, startCol) to the bottom-right end cell
-    // Returns null if no route exists
+    // Runs PathFinder from (startRow, startCol) to wherever the tile-3 end is on the map   
     private List<Node> computePath(int[][] map, int startRow, int startCol) {
         try {
             PathFinder pf = new PathFinder(MAP_COLS, MAP_ROWS, map, startRow, startCol,
-                                            MAP_COLS - 1, MAP_ROWS - 1);
+                                            endRow, endCol);
             return pf.getOrderedPath();
         } catch (Exception e) {
+        	// Returns null if no route exists
             return null;
         }
     }
@@ -334,7 +358,7 @@ public class LevelOneController {
         // Don't let the circle steal mouse events from the tower or cells underneath
         circle.setMouseTransparent(true);
         
-        // Subtract the radius of the circle to put it at (centerX, centerY).
+        // Subtract the radius of the circle to put it at (centerX, centerY)
         circle.setTranslateX(centerX - range);
         circle.setTranslateY(centerY - range);
         
@@ -364,7 +388,15 @@ public class LevelOneController {
     // Runs PathFinder on the map, then builds and populates the visual GridPane.
     // Handle per-cell click and hover handlers for tower placement.
     private void buildGameGrid() {
-        PathFinder pathFinder = new PathFinder(MAP_COLS, MAP_ROWS, Maps.LEVEL_ONE,0,0,MAP_COLS-1,MAP_ROWS-1);
+        // Scan the map to find where the start tile (2) and end tile (3) are placed
+        for (int r = 0; r < MAP_ROWS; r++) {
+            for (int c = 0; c < MAP_COLS; c++) {
+                if (Maps.LEVEL_ONE[r][c] == 2) { startRow = r; startCol = c; }
+                if (Maps.LEVEL_ONE[r][c] == 3) { endRow   = r; endCol   = c; }
+            }
+        }
+
+        PathFinder pathFinder = new PathFinder(MAP_COLS, MAP_ROWS, Maps.LEVEL_ONE, startRow, startCol, endRow, endCol);
         
         mapNodes = pathFinder.getNodes();
         path = pathFinder.getOrderedPath();
@@ -372,6 +404,7 @@ public class LevelOneController {
         // Constrain the grid to a square so cells are always square
         GridPane grid = new GridPane();
         gameGrid = grid;
+        staticGameGrid = grid; 
         var squareSize = Bindings.min(gameMapPane.widthProperty(), gameMapPane.heightProperty());
         grid.maxWidthProperty().bind(squareSize);
         grid.maxHeightProperty().bind(squareSize);
@@ -422,11 +455,15 @@ public class LevelOneController {
 
         gameMapPane.getChildren().add(grid);
 
-        // Reposition all active skeletons whenever the pane is resized
-        gameMapPane.widthProperty().addListener((obs, old, newVal) ->
-            activeSkeletons.forEach(s -> s.updatePosition(gameGrid, MAP_COLS)));
-        gameMapPane.heightProperty().addListener((obs, old, newVal) ->
-            activeSkeletons.forEach(s -> s.updatePosition(gameGrid, MAP_COLS)));
+        // Reposition all active skeletons and bone piles whenever the pane is resized
+        gameMapPane.widthProperty().addListener((obs, old, newVal) -> {
+            activeSkeletons.forEach(s -> s.updatePosition(gameGrid, MAP_COLS));
+            BonePile.allPiles.forEach(p -> p.updatePosition(gameGrid, MAP_COLS));
+        });
+        gameMapPane.heightProperty().addListener((obs, old, newVal) -> {
+            activeSkeletons.forEach(s -> s.updatePosition(gameGrid, MAP_COLS));
+            BonePile.allPiles.forEach(p -> p.updatePosition(gameGrid, MAP_COLS));
+        });
 
         // Register the Escape key to cancel placement mode.
         // Wait until the scene is attached because the scene is not yet
@@ -469,8 +506,61 @@ public class LevelOneController {
         spawnSkeleton.updatePosition(gameGrid, MAP_COLS);
     }
 
-    // Initializes resources and starts the game
+    // Resets game state so a fresh game can be started
+    private void resetGameState() {
+        // Stop the old game loop so it does not keep firing alongside the new one
+        if (gameLoop != null) {
+            gameLoop.stop();
+            gameLoop = null;
+        }
+
+        // Remove the game grid from the screen
+        if (gameGrid != null) {
+            gameMapPane.getChildren().remove(gameGrid);
+            gameGrid      = null;
+            staticGameGrid = null;
+        }
+
+        // Remove every skeleton's sprite and clear both tracking lists
+        for (Skeleton s : activeSkeletons) {
+            gameMapPane.getChildren().remove(s.getSprite());
+        }
+        activeSkeletons.clear();
+        Skeleton.enemyList.clear();
+
+        // Remove every projectile shape and clear the tracking list
+        for (Projectile p : activeProjectiles) {
+            gameMapPane.getChildren().remove(p.getShape());
+        }
+        activeProjectiles.clear();
+
+        // Remove every bone pile sprite and reset the tracking structures
+        for (BonePile pile : BonePile.allPiles) {
+            gameMapPane.getChildren().remove(pile.getSprite());
+        }
+        BonePile.allPiles.clear();
+        bonePiles = new BonePile[MAP_ROWS][MAP_COLS];
+
+        // Hide the range indicator if one is currently showing
+        hideRangeCircle();
+
+        // Clear all placed towers
+        placedTowers = new Tower[MAP_ROWS][MAP_COLS];
+
+        // Reset spawner timing and misc game state
+        spawnAccumulator = 0;
+        nextSpawnTime    = 0;
+        lastNanoSecond   = 0;
+        gameOver         = false;
+
+        // Exit placement mode in case the player was mid-placement when they quit
+        cancelPlacementMode();
+    }
+
+    // Resets all state and starts a fresh game
     public void startNewGame(double bones) {
+        resetGameState();
+
         this.bones = bones;
         this.kills = 0;
         this.lives = STARTING_LIVES;
@@ -488,14 +578,17 @@ public class LevelOneController {
         // Inside your controller's update method
         List<Skeleton> skeletonsToCleanup = Skeleton.updateAll(activeSkeletons, delta, gameGrid, MAP_COLS);
 
+        // Check if any skeleton stepped onto a new tile that has a 5 bone pile
+        checkSkeletonsOnPiles();
+
         // Reset every skeleton's speed mod so slow towers can re-apply their effect this frame
         Skeleton.resetSpeedMods();
 
         // Iterate every placed tower and apply the appropriate per-frame logic
-        // Pixel dimensions are calculated here because the controller controls the grid layout
         double cellSize   = gameGrid.getWidth() / MAP_COLS;
         double gridStartX = gameGrid.getBoundsInParent().getMinX();
         double gridStartY = gameGrid.getBoundsInParent().getMinY();
+        boolean repathNeeded = false; // set to true if a bone pile drops below max capacity this frame
         for (int row = 0; row < MAP_ROWS; row++) {
             for (int col = 0; col < MAP_COLS; col++) {
                 Tower tower = placedTowers[row][col];
@@ -506,7 +599,6 @@ public class LevelOneController {
                 double towerPixelY = gridStartY + row * cellSize + cellSize / 2.0;
 
                 if (tower instanceof OffensiveTower) {
-                    // Offensive towers handle targeting, timer, and projectile creation
                     Projectile proj = ((OffensiveTower) tower).update(delta, towerPixelX, towerPixelY);
                     if (proj == null) continue;
 
@@ -515,43 +607,208 @@ public class LevelOneController {
                     activeProjectiles.add(proj);
                     gameMapPane.getChildren().add(proj.getShape());
                 } else if (tower instanceof SupportTower) {
-                    // Support towers apply effects to in-range entities
-                    ((SupportTower) tower).update(delta, towerPixelX, towerPixelY);
+                    // Support towers apply effects to in-range entities.
+                    // 0 = nothing, 1 = bone harvested, 2 = harvested + pile dropped below max
+                    int result = ((SupportTower) tower).update(delta, towerPixelX, towerPixelY);
+                    if (result > 0) {
+                        // Award the player bones when harvested
+                        bones += 10;
+                        bonesTextbox.setText(String.format("%.0f", bones));
+                    }
+                    if (result == 2) {
+                        repathNeeded = true;
+                    }
                 }
             }
         }
 
-        // Move projectiles and apply damage on hit
-        // Remove spent ones from the scene and tracking list
+        // clean up empty piles and recalculate all skeleton paths
+        if (repathNeeded) {
+            cleanupEmptyPiles();
+            repathAllSkeletons();
+        }
+
+        // Move projectiles and apply damage on hit        
         Projectile.updateAll(delta, activeProjectiles, this::killSkeleton)
             .forEach(p -> {
                 gameMapPane.getChildren().remove(p.getShape());
+                // Remove spent projectiles from the scene
                 activeProjectiles.remove(p);
             });
 
         // Advance every skeleton
-        // escapeSkeleton handles cleanup and life deduction for those that finish
         Skeleton.updateAll(skeletonsToCleanup, delta, gameGrid, MAP_COLS).forEach(this::escapeSkeleton);
     }
 
-    // Called when a skeleton is destroyed by a tower
-    // Awards bones and increments kill counter.
+    // Award bones, increments the kill counter, and leave a bone at the tile
     private void killSkeleton(Skeleton skeleton) {
-        int xPos = (int) Math.floor(skeleton.getX());
-        int yPos = (int) Math.floor(skeleton.getY());
-        
-        mapNodes[yPos][xPos].addBones(skeleton.getBoneReward());
-        System.out.println("died at:" + xPos+" "+ yPos + "Bones here:" + mapNodes[yPos][xPos].getBones());
+        // skeleton.getX() = row, skeleton.getY() = col — clamped to valid grid bounds
+        int row = Math.max(0, Math.min((int) Math.floor(skeleton.getX()), MAP_ROWS - 1));
+        int col = Math.max(0, Math.min((int) Math.floor(skeleton.getY()), MAP_COLS - 1));
+
+        // Add a bone to the pile at the kill location
+        // If the pile just hit max capacity, reroute any skeleton already standing on that tile
+        boolean pileReachedMax = addBoneToPile(row, col);
+        if (pileReachedMax) {
+            rerouteSkeletonsOnPile(row, col);
+        }
+
         bones += skeleton.getBoneReward();
         bonesTextbox.setText(String.format("%.0f", bones));
         kills++;
         killsTextbox.setText(String.valueOf(kills));
         skeleton.removeFromScene(gameMapPane);
-        activeSkeletons.remove(skeleton); 
+        activeSkeletons.remove(skeleton);
     }
 
-    // Called when a skeleton reaches the path end
-    // Decrements lives and gives no bone reward.
+    // Creatw a new bone pile at (row, col) if one doesn't exist or add bone to the existing pile
+    // Returns true if the pile  reached max capacity for the first time
+    private boolean addBoneToPile(int row, int col) {
+        if (bonePiles[row][col] == null) {
+            // No pile here yet, so create one and add sprite above the grid
+            BonePile newPile = new BonePile(row, col);
+            bonePiles[row][col] = newPile;
+            newPile.updatePosition(gameGrid, MAP_COLS);
+            StackPane.setAlignment(newPile.getSprite(), Pos.TOP_LEFT);
+            gameMapPane.getChildren().add(newPile.getSprite());
+            return false;
+        } else {
+            // Pile already exists so add one bone and check if it just hit max capacity
+            return bonePiles[row][col].addBone();
+        }
+    }
+
+    // Removes any bone piles that have been fully harvested
+    private void cleanupEmptyPiles() {
+        for (int r = 0; r < MAP_ROWS; r++) {
+            for (int c = 0; c < MAP_COLS; c++) {
+                BonePile pile = bonePiles[r][c];
+                if (pile != null && pile.isEmpty()) {
+                    gameMapPane.getChildren().remove(pile.getSprite());
+                    BonePile.allPiles.remove(pile);
+                    bonePiles[r][c] = null;
+                }
+            }
+        }
+    }
+
+    // Builds a navmesh for a single skeleton based on where it is standing
+    // If the skeleton is standing on a 5 bone pile, wall tiles next to that pile become walkable
+    private int[][] buildNavMeshForSkeleton(int skeletonRow, int skeletonCol) {
+        int[][] navMesh = buildMapWithTowers();
+        BonePile pile = bonePiles[skeletonRow][skeletonCol];
+        if (pile != null && pile.isAtMaxCapacity()) {
+            openAdjacentWalls(navMesh, skeletonRow, skeletonCol);
+        }
+        return navMesh;
+    }
+
+    // When a pile just reached max capacity, reroute any skeleton on that tile so they can use the newly accessible wall tiles
+    private void rerouteSkeletonsOnPile(int pileRow, int pileCol) {
+        int[][] navMesh = buildNavMeshForSkeleton(pileRow, pileCol);
+
+        for (Skeleton s : Skeleton.enemyList) {
+            List<Node> currentPath = s.getPath();
+            if (currentPath == null) continue;
+
+            int nodeIndex = (int) s.getProgress();
+            nodeIndex = Math.min(nodeIndex, currentPath.size() - 1);
+            Node currentNode = currentPath.get(nodeIndex);
+
+            // Only reroute skeletons that are currently on this specific pile tile
+            if (currentNode.getX() != pileRow || currentNode.getY() != pileCol) continue;
+
+            List<Node> newPath = computePath(navMesh, pileRow, pileCol);
+            if (newPath == null) continue;
+
+            s.setPath(newPath);
+            s.setProgress(s.getProgress() - nodeIndex);
+        }
+    }
+
+    // Detects when a skeleton steps onto a new tile if that tile holds a 5 bone pile
+    private void checkSkeletonsOnPiles() {
+        for (Skeleton s : activeSkeletons) {
+            List<Node> currentPath = s.getPath();
+            if (currentPath == null) continue;
+
+            int nodeIndex = (int) s.getProgress();
+            if (nodeIndex == s.getLastNodeIndex()) continue; // still on the same tile as last frame
+            s.setLastNodeIndex(nodeIndex);
+
+            if (nodeIndex >= currentPath.size()) continue;
+            Node currentNode = currentPath.get(nodeIndex);
+            int row = currentNode.getX();
+            int col = currentNode.getY();
+
+            // Only reroute if there is a 5 bone pile on this tile
+            BonePile pile = bonePiles[row][col];
+            if (pile == null || !pile.isAtMaxCapacity()) continue;
+
+            // Open up the adjacent walls for this skeleton's path
+            int[][] navMesh = buildNavMeshForSkeleton(row, col);
+            List<Node> newPath = computePath(navMesh, row, col);
+            if (newPath == null) continue;
+
+            s.setPath(newPath);
+            s.setProgress(s.getProgress() - nodeIndex);
+        }
+    }
+
+    // Marks the four tiles directly next to a full bone pile as walkable
+    private void openAdjacentWalls(int[][] navMesh, int pileRow, int pileCol) {
+        int[][] neighbors = {
+            {pileRow - 1, pileCol},
+            {pileRow + 1, pileCol},
+            {pileRow, pileCol - 1},
+            {pileRow, pileCol + 1}
+        };
+        for (int[] neighbor : neighbors) {
+            int r = neighbor[0];
+            int c = neighbor[1];
+            if (r >= 0 && r < MAP_ROWS && c >= 0 && c < MAP_COLS && navMesh[r][c] == 1) {
+                navMesh[r][c] = 0;
+            }
+        }
+    }
+
+    // Rebuilds every active skeleton's remaining path from its current position
+    private void repathAllSkeletons() {
+        // Base navmesh has no pile effects; pile effects are applied per-skeleton below
+        int[][] baseNavMesh = buildMapWithTowers();
+
+        // Update the default path so newly spawned skeletons use the latest layout
+        List<Node> newDefault = computePath(baseNavMesh, 0, 0);
+        if (newDefault != null) path = newDefault;
+
+        // Re-route each skeleton from its current grid node to the end
+        for (Skeleton s : Skeleton.enemyList) {
+            List<Node> currentPath = s.getPath();
+            if (currentPath == null) continue;
+
+            int nodeIndex = (int) s.getProgress();
+            nodeIndex = Math.min(nodeIndex, currentPath.size() - 1);
+            Node currentNode = currentPath.get(nodeIndex);
+            int row = currentNode.getX();
+            int col = currentNode.getY();
+
+            // Build a navmesh for this specific skeleton
+            // If standing on a 5 bone pile, adjacent walls are walkable for it
+            int[][] navMesh = buildNavMeshForSkeleton(row, col);
+
+            // Skip skeletons on wall tiles
+            if (navMesh[row][col] == 1) continue;
+
+            List<Node> newPath = computePath(navMesh, row, col);
+            if (newPath == null) continue;
+
+            s.setPath(newPath);
+            // Drop the integer portion of progress
+            s.setProgress(s.getProgress() - nodeIndex);
+        }
+    }
+
+    // Decrements lives and gives no bone reward
     private void escapeSkeleton(Skeleton skeleton) {
         skeleton.removeFromScene(gameMapPane);
         activeSkeletons.remove(skeleton);
@@ -577,6 +834,30 @@ public class LevelOneController {
 
     public void setBones(double bones) {
         this.bones = bones;
+    }
+
+    // Returns the game grid so support towers can compute pixel positions for range checks
+    public static GridPane getGameGrid() {
+        return staticGameGrid;
+    }
+
+    // Pause the game without resetting anything
+    @FXML
+    private void returnToMainMenu() {
+        if (gameLoop != null) {
+            gameLoop.stop();
+        }
+        // Reset the timer
+        lastNanoSecond = 0;
+        SceneSelector.setGamePaused(true);
+        SceneSelector.launchMainMenuScene();
+    }
+
+    // Resume from where game was paused
+    public void resumeGame() {
+        if (gameLoop != null) {
+            gameLoop.start();
+        }
     }
 
 }

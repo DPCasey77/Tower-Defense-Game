@@ -19,7 +19,7 @@ public class SlowTower extends SupportTower {
 
   // Slows every skeleton within the tower's range
   @Override
-  public boolean update(double delta, double towerPixelX, double towerPixelY) {
+  public int update(double delta, double towerPixelX, double towerPixelY) {
       double rangeSquared = range * range;
       for (Skeleton s : Skeleton.enemyList) {
           double dx = s.getSpriteCenterX() - towerPixelX;
@@ -30,8 +30,8 @@ public class SlowTower extends SupportTower {
               s.setMoveSpeedMod(SLOW_FACTOR);
           }
       }
-      // Slowing enemies never changes the map layout, so no re-pathfinding is needed
-      return false;
+      // Slowing enemies never harvests bones or changes the map layout
+      return 0;
   }
 
 

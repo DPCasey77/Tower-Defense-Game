@@ -18,7 +18,8 @@ public abstract class SupportTower  extends Tower{
 	}
 
 	// Applies this support tower's effect to in-range entities each frame.
-	// Returns true if something changed that requires enemy paths to be recalculated.
-	public abstract boolean update(double delta, double towerPixelX, double towerPixelY);
+	// Returns: 0 = nothing happened, 1 = bone harvested (award bones),
+	//          2 = bone harvested AND pile dropped below max capacity (award bones + repath).
+	public abstract int update(double delta, double towerPixelX, double towerPixelY);
 
 }

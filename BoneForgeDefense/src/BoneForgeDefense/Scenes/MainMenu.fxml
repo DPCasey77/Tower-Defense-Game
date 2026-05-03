@@ -35,7 +35,7 @@
                      </font>
                   </Label>
                   <Button fx:id="newGameButton" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onMouseClicked="#startNewGame" text="New Game" />
-                  <Button fx:id="continueGameButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Continue Game" />
+                  <Button fx:id="continueGameButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onMouseClicked="#continueGame" text="Continue Game" />
                   <Button fx:id="settingsButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onMouseClicked="#openSettings" text="Settings" />
                   <Button fx:id="exitButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onMouseClicked="#exitProgram" text="Exit" />
                </children>
