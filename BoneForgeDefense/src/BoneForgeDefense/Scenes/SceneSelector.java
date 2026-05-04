@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package BoneForgeDefense.Scenes;
 
 import java.util.Map;
@@ -155,4 +154,3 @@ public class SceneSelector extends Application{
 		launch(args);
 	}
 }
->>>>>>> stash

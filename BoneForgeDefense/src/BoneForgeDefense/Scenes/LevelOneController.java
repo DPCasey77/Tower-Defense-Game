@@ -41,6 +41,10 @@ import BoneForgeDefense.Entities.SupportTowers.BoneHarvesterTower;
 import BoneForgeDefense.Entities.SupportTowers.SlowTower;
 import BoneForgeDefense.Entities.SupportTowers.SupportTower;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.IOException;
+
 
 public class LevelOneController {
 
@@ -839,6 +843,18 @@ public class LevelOneController {
     public void setBones(double bones) {
         this.bones = bones;
     }
+    
+    public int getKills() { 
+    	return kills; 
+    	}
+    
+    public int getWave() {
+        return wave;
+    }
+    
+    public int getLives() { 
+    	return lives; 
+    	}
 
     // Returns the game grid so support towers can compute pixel positions for range checks
     public static GridPane getGameGrid() {
@@ -861,6 +877,110 @@ public class LevelOneController {
     public void resumeGame() {
         if (gameLoop != null) {
             gameLoop.start();
+        }
+    }
+    
+ // THE SAVE METHOD
+    public void SaveGame() {
+    	
+    	 // Convert placed towers → TowerData list
+        List<TowerData> towerList = new ArrayList<>();
+
+        for (int r = 0; r < MAP_ROWS; r++) {
+            for (int c = 0; c < MAP_COLS; c++) {
+                Tower t = placedTowers[r][c];
+                if (t != null) {
+                    towerList.add(new TowerData(
+                        r,
+                        c,
+                        t.getClass().getSimpleName()
+                    ));
+                }
+            }
+        }
+    	
+        GameState state = new GameState(
+            getBones(), 
+            getKills(), 
+            getLives()
+    );
+        
+        state.wave = getWave();   // if you have it
+        state.mapId = 1;          // your level
+        state.towers = towerList;
+        
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            mapper.writerWithDefaultPrettyPrinter()
+            .writeValue(new File("SaveGameData.json"), state);
+
+            System.out.println("Game Saved!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void loadGame() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            GameState state = mapper.readValue(
+                new File("SaveGameData.json"),
+                GameState.class
+            );
+
+            // Restore basic stats
+            this.bones = state.bones;
+            this.kills = state.kills;
+            this.lives = state.lives;
+
+            // Restore UI
+            bonesTextbox.setText(String.format("%.0f", bones));
+            killsTextbox.setText(String.valueOf(kills));
+            livesTextbox.setText(String.valueOf(lives));
+
+            // Restore towers
+            if (state.towers != null) {
+                for (TowerData t : state.towers) {
+                    Tower tower = createTowerFromType(t.type);
+                    if (tower == null) continue;
+
+                    placedTowers[t.row][t.col] = tower;
+
+                    Pane cell = gridCells[t.row][t.col];
+                    ImageView sprite = tower.getSprite();
+
+                    sprite.setPreserveRatio(false);
+                    sprite.fitWidthProperty().bind(cell.widthProperty());
+                    sprite.fitHeightProperty().bind(cell.heightProperty());
+
+                    cell.getChildren().add(sprite);
+                }
+            }
+
+            // IMPORTANT: rebuild pathing after towers load
+            repathAllSkeletons();
+
+            System.out.println("Game Loaded!");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private Tower createTowerFromType(String type) {
+        switch (type) {
+            case "BoneBusterTower":
+                return new BoneBusterTower(0, 0);
+            case "ShieldTower":
+                return new ShieldTower(0, 0);
+            case "SlowTower":
+                return new SlowTower(0, 0);
+            case "BoneHarvesterTower":
+                return new BoneHarvesterTower(0, 0);
+            default:
+                return null;
         }
     }
 
