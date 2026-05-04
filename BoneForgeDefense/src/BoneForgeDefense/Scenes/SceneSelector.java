@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package BoneForgeDefense.Scenes;
 
 import java.util.Map;
@@ -82,3 +83,76 @@ public class SceneSelector extends Application {
         launch(args);
     }
 }
+=======
+package BoneForgeDefense.Scenes;
+
+import java.util.Map;
+
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+public class SceneSelector extends Application{
+
+	private static Stage activeStage;
+	private static Scene mainMenuScene;
+	private static Scene levelOneScene;
+	private static Scene settingsMenuScene;
+	
+	private static LevelOneController levelOneController;
+	
+	@Override
+	public void start(Stage stage) throws Exception {
+		// TODO Auto-generated method stub
+		
+		activeStage = stage;
+		
+		//get launch parameters
+		Parameters params = getParameters();
+		Map<String, String> namedParams = params.getNamed();
+		
+		
+		double width = Double.parseDouble(namedParams.getOrDefault("width", "1600"));
+	    double height = Double.parseDouble(namedParams.getOrDefault("height", "1000"));
+	    
+	    
+	    Parent mainMenuRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/MainMenu.fxml"));
+		mainMenuScene = new Scene(mainMenuRoot, width, height);
+		
+		FXMLLoader levelOneLoader = new FXMLLoader(getClass().getResource("/BoneForgeDefense/Scenes/LevelOne.fxml"));
+		Parent levelOneRoot = levelOneLoader.load();
+		levelOneController = levelOneLoader.getController();
+		levelOneScene = new Scene(levelOneRoot, width, height);		
+		
+		
+		Parent settingsMenuRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/SettingsMenu.fxml"));
+		settingsMenuScene = new Scene(settingsMenuRoot, width, height);
+		
+		//when opening the application sets the screen size to full screen
+		stage.setFullScreen(true);
+		
+		stage.setTitle("Bone Forge Defense");
+		stage.setScene(mainMenuScene);
+		stage.show();
+	}
+	
+	public static void launchSettingsMenuScene() {
+		activeStage.setScene(settingsMenuScene);
+	}
+	
+	public static void launchLevelOneScene() {
+		activeStage.setScene(levelOneScene);
+	}
+	
+	public static LevelOneController getLevelOneController() {
+	    return levelOneController;
+	}
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		launch(args);
+	}
+}
+>>>>>>> stash
