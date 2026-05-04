@@ -819,6 +819,14 @@ public class LevelOneController {
         activeSkeletons.remove(skeleton);
         lives--;
         livesTextbox.setText(String.valueOf(lives));
+        if (lives <= 0) {
+            gameOver = true;
+            if (gameLoop != null) {
+                gameLoop.stop();
+            }
+            SceneSelector.setGamePaused(false);
+            SceneSelector.launchGameOverScene();
+        }
     }
 
     // Tracks elapsed time and spawns a new skeleton when the random interval expires

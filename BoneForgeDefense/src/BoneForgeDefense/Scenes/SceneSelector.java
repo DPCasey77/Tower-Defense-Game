@@ -14,9 +14,11 @@ public class SceneSelector extends Application {
     private static Scene mainMenuScene;
     private static Scene levelOneScene;
     private static Scene settingsMenuScene;
+    private static Scene gameOverScene;
 
     public static LevelOneController   levelOneController;
     private static MainMenuController  mainMenuController;
+    private static GameOverController  gameOverController;
 
     // True while a game is running but paused (player went to main menu mid-game)
     private static boolean gamePaused = false;
@@ -47,6 +49,11 @@ public class SceneSelector extends Application {
         Parent settingsMenuRoot = FXMLLoader.load(getClass().getResource("/BoneForgeDefense/Scenes/SettingsMenu.fxml"));
         settingsMenuScene = new Scene(settingsMenuRoot, width, height);
 
+        FXMLLoader gameOverLoader = new FXMLLoader(getClass().getResource("/BoneForgeDefense/Scenes/GameOver.fxml"));
+        Parent gameOverRoot = gameOverLoader.load();
+        gameOverController  = gameOverLoader.getController();
+        gameOverScene = new Scene(gameOverRoot, width, height);
+
         stage.setTitle("Bone Forge Defense");
         stage.setScene(mainMenuScene);
         stage.show();
@@ -60,6 +67,10 @@ public class SceneSelector extends Application {
 
     public static void launchSettingsMenuScene() {
         activeStage.setScene(settingsMenuScene);
+    }
+
+    public static void launchGameOverScene() {
+        activeStage.setScene(gameOverScene);
     }
 
     public static void launchLevelOneScene() {
