@@ -484,20 +484,20 @@ public class LevelOneController {
     }
 
     // Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
-    public void spawnSkeleton(int type) {
+    public void spawnSkeleton(int type, double x, double y) {
     	Skeleton spawnSkeleton;
     	switch(type){
     	case 0:
-    		spawnSkeleton = new SkeletonEnemy(0, 0);
+    		spawnSkeleton = new SkeletonEnemy(x, y);
     		break;
     	case 1:
-    		spawnSkeleton = new SkeletonEnemy(0, 0);
+    		spawnSkeleton = new SkeletonEnemy(x, y);
     		break;
     	case 2:
-    		spawnSkeleton = new NecromancerEnemy(0, 0);
+    		spawnSkeleton = new NecromancerEnemy(x, y);
     		break;
     	default:
-    		spawnSkeleton  = new TankEnemy(0, 0);
+    		spawnSkeleton  = new TankEnemy(x, y);
     		break;
     	}
         
@@ -675,6 +675,7 @@ public class LevelOneController {
             newPile.updatePosition(gameGrid, MAP_COLS);
             StackPane.setAlignment(newPile.getSprite(), Pos.TOP_LEFT);
             gameMapPane.getChildren().add(newPile.getSprite());
+            mapNodes[row][col].addBones(1);
             return false;
         } else {
             // Pile already exists so add one bone and check if it just hit max capacity
@@ -828,7 +829,7 @@ public class LevelOneController {
             // Pick a new random delay for the next spawn
             nextSpawnTime = SPAWN_INTERVAL_MIN + random.nextDouble() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
             Random random = new Random();
-            spawnSkeleton(random.nextInt(3));
+            spawnSkeleton(random.nextInt(3), 0, 0);
         }
     }
 
