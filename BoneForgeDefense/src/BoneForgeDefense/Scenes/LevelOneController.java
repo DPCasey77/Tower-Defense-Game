@@ -884,19 +884,29 @@ public class LevelOneController {
         return staticGameGrid;
     }
 
-    // Resume from where game was paused
+    // Resume a paused in-memory game without touching the save file
     public void resumeGame() {
         if (gameLoop != null) {
             gameLoop.start();
         }
     }
-    
+
+    // Resets state, loads from SaveGameData.json, and starts the game loop
+    public void startLoadedGame() {
+        resetGameState();
+        gameStarted = true;
+        buildGameGrid();
+        loadGame();
+        startGameLoop();
+        loadTowerCards();
+    }
+
  // THE SAVE METHOD
     public void SaveGame() {
-    	
+
     	 if (!gameStarted) return;
     	    if (gameGrid == null) return;
-    	
+
     	 // Convert placed towers → TowerData list
         List<TowerData> towerList = new ArrayList<>();
 
@@ -912,16 +922,16 @@ public class LevelOneController {
                 }
             }
         }
-    	
+
         GameState state = new GameState(
-            getBones(), 
-            getKills(), 
+            getBones(),
+            getKills(),
             getLives()
     );
-        
-        state.mapId = 1;          // your level
+
+        state.mapId = 1;
         state.towers = towerList;
-        
+
         ObjectMapper mapper = new ObjectMapper();
 
         try {
@@ -933,8 +943,9 @@ public class LevelOneController {
             e.printStackTrace();
         }
     }
+
     
-    public void loadGame() {
+    private void loadGame() {
         ObjectMapper mapper = new ObjectMapper();
 
         try {
@@ -963,17 +974,25 @@ public class LevelOneController {
 
                     Pane cell = gridCells[t.row][t.col];
                     ImageView sprite = tower.getSprite();
-
+                    
                     sprite.setPreserveRatio(false);
                     sprite.fitWidthProperty().bind(cell.widthProperty());
                     sprite.fitHeightProperty().bind(cell.heightProperty());
-
+                    
                     cell.getChildren().add(sprite);
+
+                    if (tower.getRange() > 0) {
+                        final int row = t.row, col = t.col;
+                        sprite.setOnMouseEntered(e -> showRangeCircle(row, col, tower));
+                        sprite.setOnMouseExited(e -> hideRangeCircle());
+                    }
                 }
             }
 
             // IMPORTANT: rebuild pathing after towers load
-            repathAllSkeletons();
+            int[][] navMesh = buildMapWithTowers();
+            List<Node> rebuilt = computePath(navMesh, startRow, startCol);
+            if (rebuilt != null) path = rebuilt;
 
             System.out.println("Game Loaded!");
 

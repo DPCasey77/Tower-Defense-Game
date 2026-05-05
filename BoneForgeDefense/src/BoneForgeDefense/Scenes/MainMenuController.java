@@ -1,5 +1,6 @@
 package BoneForgeDefense.Scenes;
 
+import java.io.File;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
@@ -11,22 +12,19 @@ public class MainMenuController {
     @FXML private Button newGameButton;
     @FXML private Button settingsButton;
 
-    // Called automatically by JavaFX after the FXML fields are injected
+    
     @FXML
     public void initialize() {
-        // No game is paused when the app first launches, so disable Continue
-        continueGameButton.setDisable(true);
+        continueGameButton.setDisable(!new File("SaveGameData.json").exists());
     }
 
-    // Called by SceneSelector every time the main menu is shown.
-    // Enables the Continue button only when a game is currently paused.
+    // Enables the Continue button whenever a save file is present
     public void refreshContinueButton() {
-        continueGameButton.setDisable(!SceneSelector.isGamePaused());
+        continueGameButton.setDisable(!new File("SaveGameData.json").exists());
     }
 
     @FXML
     void startNewGame(MouseEvent event) {
-        // Starting a new game clears any paused game, so mark it as not paused
         SceneSelector.setGamePaused(false);
         SceneSelector.launchLevelOneScene();
         SceneSelector.getLevelOneController().startNewGame(100);
@@ -36,7 +34,7 @@ public class MainMenuController {
     void continueGame(MouseEvent event) {
         SceneSelector.setGamePaused(false);
         SceneSelector.launchLevelOneScene();
-        SceneSelector.getLevelOneController().resumeGame();
+        SceneSelector.getLevelOneController().startLoadedGame();
     }
 
     @FXML
