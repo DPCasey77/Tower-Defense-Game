@@ -1,6 +1,7 @@
 package BoneForgeDefense.Scenes;
 
 import javafx.beans.binding.Bindings;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -51,6 +52,7 @@ public class LevelOneController {
 	// Game state variables
     private long lastNanoSecond = 0;
     private Boolean gameOver = false;
+    private boolean gameStarted = false;
 
     private double bones;
     private int kills;
@@ -488,20 +490,20 @@ public class LevelOneController {
     }
 
     // Creates a new SkeletonEnemy, adds its sprite to the map, and places it at the start of the path
-    public void spawnSkeleton(int type) {
+    public void spawnSkeleton(int type, double x, double y) {
     	Skeleton spawnSkeleton;
     	switch(type){
     	case 0:
-    		spawnSkeleton = new SkeletonEnemy(0, 0);
+    		spawnSkeleton = new SkeletonEnemy(x, y);
     		break;
     	case 1:
-    		spawnSkeleton = new SkeletonEnemy(0, 0);
+    		spawnSkeleton = new SkeletonEnemy(x, y);
     		break;
     	case 2:
-    		spawnSkeleton = new NecromancerEnemy(0, 0);
+    		spawnSkeleton = new NecromancerEnemy(x, y);
     		break;
     	default:
-    		spawnSkeleton  = new TankEnemy(0, 0);
+    		spawnSkeleton  = new TankEnemy(x, y);
     		break;
     	}
         
@@ -568,6 +570,8 @@ public class LevelOneController {
     // Resets all state and starts a fresh game
     public void startNewGame(double bones) {
         resetGameState();
+        
+        gameStarted = true;
 
         this.bones = bones;
         this.kills = 0;
@@ -679,6 +683,7 @@ public class LevelOneController {
             newPile.updatePosition(gameGrid, MAP_COLS);
             StackPane.setAlignment(newPile.getSprite(), Pos.TOP_LEFT);
             gameMapPane.getChildren().add(newPile.getSprite());
+            mapNodes[row][col].addBones(1);
             return false;
         } else {
             // Pile already exists so add one bone and check if it just hit max capacity
@@ -822,6 +827,14 @@ public class LevelOneController {
         activeSkeletons.remove(skeleton);
         lives--;
         livesTextbox.setText(String.valueOf(lives));
+        if (lives <= 0) {
+            gameOver = true;
+            if (gameLoop != null) {
+                gameLoop.stop();
+            }
+            SceneSelector.setGamePaused(false);
+            SceneSelector.launchGameOverScene();
+        }
     }
 
     // Tracks elapsed time and spawns a new skeleton when the random interval expires
@@ -832,8 +845,22 @@ public class LevelOneController {
             // Pick a new random delay for the next spawn
             nextSpawnTime = SPAWN_INTERVAL_MIN + random.nextDouble() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
             Random random = new Random();
-            spawnSkeleton(random.nextInt(3));
+            spawnSkeleton(random.nextInt(3), 0, 0);
         }
+    }
+    
+    @FXML
+    void returnToMainMenu(ActionEvent event) {
+    	if (gameLoop != null) {
+            gameLoop.stop();
+        }
+
+        // Save before leaving
+        SaveGame();
+
+        lastNanoSecond = 0;
+        SceneSelector.setGamePaused(true);
+        SceneSelector.launchMainMenuScene();
     }
 
     public double getBones() {
@@ -848,10 +875,6 @@ public class LevelOneController {
     	return kills; 
     	}
     
-    public int getWave() {
-        return wave;
-    }
-    
     public int getLives() { 
     	return lives; 
     	}
@@ -859,18 +882,6 @@ public class LevelOneController {
     // Returns the game grid so support towers can compute pixel positions for range checks
     public static GridPane getGameGrid() {
         return staticGameGrid;
-    }
-
-    // Pause the game without resetting anything
-    @FXML
-    private void returnToMainMenu() {
-        if (gameLoop != null) {
-            gameLoop.stop();
-        }
-        // Reset the timer
-        lastNanoSecond = 0;
-        SceneSelector.setGamePaused(true);
-        SceneSelector.launchMainMenuScene();
     }
 
     // Resume from where game was paused
@@ -882,6 +893,9 @@ public class LevelOneController {
     
  // THE SAVE METHOD
     public void SaveGame() {
+    	
+    	 if (!gameStarted) return;
+    	    if (gameGrid == null) return;
     	
     	 // Convert placed towers → TowerData list
         List<TowerData> towerList = new ArrayList<>();
@@ -905,7 +919,6 @@ public class LevelOneController {
             getLives()
     );
         
-        state.wave = getWave();   // if you have it
         state.mapId = 1;          // your level
         state.towers = towerList;
         

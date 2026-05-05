@@ -35,7 +35,7 @@ public class NecromancerEnemy extends Skeleton{
 		System.out.println("Casting Timer: " + castTimeCounter);
 		if (castTimeCounter>=castTimer) {
 			for(int i=0;i<enemiesToSpawn;i++) {
-				SceneSelector.levelOneController.spawnSkeleton(5);
+				SceneSelector.levelOneController.spawnSkeleton(5, this.xPos, this.yPos);
 			}
 			isCasting=false;
 			this.enemiesToSpawn=0;
@@ -48,34 +48,34 @@ public class NecromancerEnemy extends Skeleton{
 		double bonesInRange = 0;
 		int minX = 0;
 		int minY = 0;
-		int maxX = LevelOneController.MAP_COLS-1;
-		int maxY = LevelOneController.MAP_ROWS-1;
+		int maxY = LevelOneController.MAP_COLS-1;
+		int maxX = LevelOneController.MAP_ROWS-1;
 		
 		if(Math.floor(this.xPos - castRange) >= 0) {
 			minX = (int) Math.floor(this.xPos - castRange);
 		}
-		if(Math.floor(this.xPos + castRange) <= LevelOneController.MAP_COLS-1) {
+		if(Math.floor(this.xPos + castRange) <= LevelOneController.MAP_ROWS-1) {
 			maxX = (int) Math.floor(this.xPos + castRange);
 		}
 		if(Math.floor(this.yPos - castRange) >= 0) {
 			minY = (int) Math.floor(this.yPos - castRange);
 		}
-		if(Math.floor(this.yPos + castRange) <= LevelOneController.MAP_ROWS-1) {
+		if(Math.floor(this.yPos + castRange) <= LevelOneController.MAP_COLS-1) {
 			maxY = (int) Math.floor(this.yPos + castRange);
 		}
 		
 		for(int i = minY; i<=maxY; i++) {
 			for(int j = minX; j<=maxX; j++) {
-				if (LevelOneController.mapNodes[i][j].getRange(this.xPos,this.yPos)<=(this.castRange*this.castRange)) {
-					bonesInRange+=LevelOneController.mapNodes[i][j].getBones();
+				if (LevelOneController.mapNodes[j][i].getRange(this.xPos,this.yPos)<=(this.castRange*this.castRange)) {
+					bonesInRange+=LevelOneController.mapNodes[j][i].getBones();
 				}
 			}
 		}
 		if(bonesInRange>=100) {
 			for(int i = minY; i<=maxY; i++) {
 				for(int j = minX; j<=maxX; j++) {
-					if (LevelOneController.mapNodes[i][j].getRange(this.xPos,this.yPos)<=(this.castRange*this.castRange)) {
-						LevelOneController.mapNodes[i][j].setBones(0);
+					if (LevelOneController.mapNodes[j][i].getRange(this.xPos,this.yPos)<=(this.castRange*this.castRange)) {
+						LevelOneController.mapNodes[j][i].setBones(0);
 					}
 				}
 			}
@@ -85,26 +85,26 @@ public class NecromancerEnemy extends Skeleton{
 	private void removeBonesInRange(){
 		int minX = 0;
 		int minY = 0;
-		int maxX = LevelOneController.MAP_COLS-1;
-		int maxY = LevelOneController.MAP_ROWS-1;
+		int maxY = LevelOneController.MAP_COLS-1;
+		int maxX = LevelOneController.MAP_ROWS-1;
 		
 		if(Math.floor(this.xPos - castRange) >= 0) {
 			minX = (int) Math.floor(this.xPos - castRange);
 		}
-		if(Math.floor(this.xPos + castRange) <= LevelOneController.MAP_COLS-1) {
+		if(Math.floor(this.xPos + castRange) <= LevelOneController.MAP_ROWS-1) {
 			maxX = (int) Math.floor(this.xPos + castRange);
 		}
 		if(Math.floor(this.yPos - castRange) >= 0) {
 			minY = (int) Math.floor(this.yPos - castRange);
 		}
-		if(Math.floor(this.yPos + castRange) <= LevelOneController.MAP_ROWS-1) {
+		if(Math.floor(this.yPos + castRange) <= LevelOneController.MAP_COLS-1) {
 			maxY = (int) Math.floor(this.yPos + castRange);
 		}
 		
 		for(int i = minY; i<=maxY; i++) {
 			for(int j = minX; j<=maxX; j++) {
-				if (LevelOneController.mapNodes[i][j].getRange(this.xPos,this.yPos)<=(this.castRange*this.castRange)) {
-					LevelOneController.mapNodes[i][j].setBones(0);
+				if (LevelOneController.mapNodes[j][i].getRange(this.xPos,this.yPos)<=(this.castRange*this.castRange)) {
+					LevelOneController.mapNodes[j][i].setBones(0);
 				}
 			}
 		}
@@ -126,7 +126,7 @@ public class NecromancerEnemy extends Skeleton{
 
 	private void canCast(double delta) {
 		if (coolDown<=0) {
-			enemiesToSpawn = (int)getBonesInRange()/100-(int)getBonesInRange()%100;
+			enemiesToSpawn = (int)getBonesInRange()/2;
 			if(enemiesToSpawn>=1) {
 				isCasting=true;
 				removeBonesInRange();
